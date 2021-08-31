@@ -1,0 +1,30 @@
+{
+  "name": "downloader-remotebrowser",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node --trace_gc -r esm app.js",
+    "start_dev": "NODE_ENV=dev nodemon -r esm app.js"
+  },
+  "dependencies": {
+    "@sentry/node": "^6.11.0",
+    "@sentry/tracing": "^6.11.0",
+    "axios": "^0.21.1",
+    "axios-retry": "^3.1.9",
+    "body-parser": "^1.19.0",
+    "compression": "^1.7.4",
+    "cookie-parser": "~1.4.4",
+    "cors": "^2.8.5",
+    "debug": "~2.6.9",
+    "dotenv": "^10.0.0",
+    "esm": "^3.2.25",
+    "express": "~4.16.1",
+    "form-data": "^4.0.0",
+    "helmet": "^4.6.0",
+    "puppeteer": "^10.2.0",
+    "tesseract.js": "^2.1.5"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.12"
+  }
+}
