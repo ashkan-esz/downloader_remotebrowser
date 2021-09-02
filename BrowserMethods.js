@@ -101,7 +101,11 @@ async function loadPage(url, isAnimelist, pageObj, canRetry = true) {
             }
         }
         if (url.includes('valamovie')) {
-            await pageObj.page.waitForSelector('.container');
+            await Promise.any([
+                pageObj.page.waitForSelector('.container'),
+                pageObj.page.waitForNavigation(),
+                pageObj.page.waitForSelector('.cf-browser-verification', {hidden: true, timeout: 10000}),
+            ]);
         }
         return true;
     } catch (error) {
