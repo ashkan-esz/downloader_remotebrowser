@@ -100,6 +100,9 @@ async function loadPage(url, isAnimelist, pageObj, canRetry = true) {
                 await pageObj.page.waitForSelector('.alphapageNavi', {timeout: 15000});
             }
         }
+        if (url.includes('valamovie')) {
+            await pageObj.page.waitForSelector('.container');
+        }
         return true;
     } catch (error) {
         await closePage(pageObj.id);
