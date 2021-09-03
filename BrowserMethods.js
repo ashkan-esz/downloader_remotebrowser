@@ -93,6 +93,7 @@ async function loadPage(url, isAnimelist, pageObj, canRetry = true) {
         } else {
             await pageObj.page.goto(url);
         }
+
         if (url.includes('digimovie')) {
             await pageObj.page.waitForSelector('.container');
             if (url.match(/\/serie$|\/page\//g) || url.replace('https://', '').split('/').length === 1) {
@@ -104,8 +105,13 @@ async function loadPage(url, isAnimelist, pageObj, canRetry = true) {
         if (url.includes('valamovie')) {
             let clouadFlateID = await pageObj.page.$('.ray_id');
             if (clouadFlateID) {
-                console.log('-----here');
-
+                console.log('-----valamovie: cloudFlare');
+                await Promise.any([
+                    pageObj.page.waitForSelector('#mainSite'),
+                    pageObj.page.waitForNavigation(),
+                    pageObj.page.waitForSelector('.ray_id', {hidden: true, timeout: 15000}),
+                    pageObj.page.waitForSelector('.cf-browser-verification', {hidden: true, timeout: 15000}),
+                ]);
             }
         }
 
