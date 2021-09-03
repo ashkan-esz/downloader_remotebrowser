@@ -61,7 +61,8 @@ async function openNewPage() {
     try {
         if (!browser || !browser.isConnected()) {
             browser = await puppeteer.launch({
-                headless: true,
+                // headless: true,
+                headless: false,
                 args: [
                     "--no-sandbox",
                     "--single-process",
@@ -73,7 +74,6 @@ async function openNewPage() {
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36');
         await page.setViewport({width: 1280, height: 800});
         await page.setDefaultTimeout(40000);
-        await page.setBypassCSP(true);
         await configRequestInterception(page);
         return page;
     } catch (error) {
