@@ -100,13 +100,35 @@ async function loadPage(url, isAnimelist, pageObj, canRetry = true) {
                 await pageObj.page.waitForSelector('.alphapageNavi', {timeout: 15000});
             }
         }
+
         if (url.includes('valamovie')) {
-            await Promise.any([
-                pageObj.page.waitForSelector('.container'),
-                pageObj.page.waitForNavigation(),
-                pageObj.page.waitForSelector('.cf-browser-verification', {hidden: true, timeout: 10000}),
-            ]);
+            let clouadFlateID = pageObj.page.$('.ray_id');
+            if (clouadFlateID) {
+                console.log('-----here');
+                try {
+                    const puppeteer = require('puppeteer');
+                    let browser = await puppeteer.launch({
+                        headless: true,
+                        args: [
+                            "--no-sandbox",
+                            "--single-process",
+                            "--no-zygote"
+                        ]
+                    });
+                    let page = await browser.newPage();
+                    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36');
+                    await page.setViewport({width: 1280, height: 800});
+                    await page.setDefaultTimeout(40000);
+                    await page.goto(url);
+                    await page.waitForTimeout(10000);
+                    await browser.close();
+                } catch (error) {
+                    saveError(error);
+                    return null;
+                }
+            }
         }
+
         return true;
     } catch (error) {
         await closePage(pageObj.id);
