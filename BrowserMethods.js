@@ -91,6 +91,23 @@ async function loadPage(url, isAnimelist, pageObj, canRetry = true) {
             await pageObj.page.goto(url, {waitUntil: "domcontentloaded"});
             await loginAnimeList(pageObj);
         } else {
+            if (url.includes('valamovie')) {
+                let cookie = {
+                    name: 'PHPSESSID',
+                    value: 'd80d6b50afba01eb2fdc7f3e4631ff4c',
+                    domain: 'valamovie.world',
+                    path: '/',
+                    expires: -1,
+                    size: 41,
+                    httpOnly: true,
+                    secure: true,
+                    session: true,
+                    sameParty: false,
+                    sourceScheme: 'Secure',
+                    sourcePort: 443
+                }
+                await pageObj.page.setCookie(cookie);
+            }
             await pageObj.page.goto(url);
         }
         if (url.includes('digimovie')) {
@@ -102,7 +119,11 @@ async function loadPage(url, isAnimelist, pageObj, canRetry = true) {
         }
 
         if (url.includes('valamovie')) {
-            let clouadFlateID = pageObj.page.$('.ray_id');
+            // await pageObj.page.screenshot({
+            //     path: './photo.png'
+            // });
+            // console.log(await pageObj.page.cookies());
+            let clouadFlateID = await pageObj.page.$('.ray_id');
             if (clouadFlateID) {
                 console.log('-----here');
                 try {
