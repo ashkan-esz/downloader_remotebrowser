@@ -11,7 +11,6 @@
     "test": "NODE_ENV=dev node -r esm test.js"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.28.0",
     "@sentry/node": "^6.11.0",
     "@sentry/tracing": "^6.11.0",
     "axios": "^0.21.1",

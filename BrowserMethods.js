@@ -4,7 +4,6 @@ const cheerio = require('cheerio');
 const {getPageObj, setPageFree, closePage} = require('./puppetterBrowser');
 const {createWorker} = require('tesseract.js');
 const FormData = require('form-data');
-const {checkSubtitleExist, uploadSubtitleToS3ByURl} = require('./cloudStorage');
 const {saveError} = require('./saveError');
 
 axiosRetry(axios, {
@@ -16,6 +15,8 @@ axiosRetry(axios, {
         error.code === 'ECONNRESET' ||
         error.code === 'ENOTFOUND' ||
         error.code === 'ECONNABORTED' ||
+        error.code === 'ETIMEDOUT' ||
+        error.code === 'SlowDown' ||
         (error.response &&
             error.response.status !== 429 &&
             error.response.status !== 404 &&
@@ -28,6 +29,7 @@ let tesseractCounter = 0;
 export async function getPageData(url) {
     let pageData = {
         pageContent: null,
+        cookies: {},
         responseUrl: '',
         subtitles: [],
         error: false,
@@ -78,10 +80,11 @@ async function handleSourceSpecificStuff(url, canRetry = true) {
     }
     let data = {
         pageContent: await pageObj.page.content(),
+        cookies: await pageObj.page.cookies(),
         responseUrl: pageObj.page.url(),
         subtitles: subtitles,
     }
-    setPageFree(pageObj.id);
+    await setPageFree(pageObj.id);
     return data;
 }
 
@@ -188,89 +191,7 @@ async function uploadAnimeListSubtitles(pageObj) {
             subtitles.push(subtitle);
         }
     }
-    subtitles = subtitles.sort((a, b) =>
-        Number(b.episode.split('-').pop()) - Number(a.episode.split('-').pop())
-    );
-    await setSubtitlesFileName(pageObj, subtitles);
-    subtitles = await filterExistedSubtitles(subtitles);
-    await uploadNewSubtitlesToCloudStorage(pageObj, subtitles);
-    subtitles = subtitles.sort((a, b) =>
-        Number(b.episode.split('-').pop()) - Number(a.episode.split('-').pop())
-    );
     return subtitles;
-}
-
-async function uploadNewSubtitlesToCloudStorage(pageObj, subtitles) {
-    const cookies = await pageObj.page.cookies();
-    const cookiesString = cookies.map(ck => ck.name + '=' + ck.value).join(';');
-    let promiseArray = [];
-    for (let i = 0; i < subtitles.length; i++) {
-        try {
-            let promise = uploadSubtitleToS3ByURl(subtitles[i].originalUrl, subtitles[i].fileName, cookiesString).then(subtitleUrl => {
-                if (subtitleUrl) {
-                    subtitles[i].originalUrl = subtitles[i].originalUrl.replace(/\?token=.+$/g, '?token=');
-                    subtitles[i].url = subtitleUrl;
-                }
-            });
-            promiseArray.push(promise);
-            if (promiseArray.length > 10) {
-                await Promise.all(promiseArray);
-                promiseArray = [];
-            }
-        } catch (error) {
-            saveError(error);
-        }
-    }
-    await Promise.all(promiseArray);
-    subtitles = subtitles.filter(item => item.url !== '');
-}
-
-async function filterExistedSubtitles(subtitles) {
-    let newSubtitles = [];
-    let promiseArray = [];
-    for (let i = 0; i < subtitles.length; i++) {
-        try {
-            let promise = checkSubtitleExist(subtitles[i].fileName).then(exist => {
-                if (!exist) {
-                    newSubtitles.push(subtitles[i]);
-                }
-            });
-            promiseArray.push(promise);
-            if (promiseArray.length > 20) {
-                await Promise.all(promiseArray);
-                promiseArray = [];
-            }
-        } catch (error) {
-            saveError(error);
-        }
-    }
-    await Promise.all(promiseArray);
-    return newSubtitles;
-}
-
-async function setSubtitlesFileName(pageObj, subtitles) {
-    const cookies = await pageObj.page.cookies();
-    let promiseArray = [];
-    for (let i = 0; i < subtitles.length; i++) {
-        try {
-            let promise = axios.head(subtitles[i].originalUrl, {
-                responseType: 'stream',
-                headers: {
-                    Cookie: cookies.map(ck => ck.name + '=' + ck.value).join(';')
-                }
-            }).then(response => {
-                subtitles[i].fileName = `animelist-${response.headers['content-disposition'].replace('attachment; filename=', '').replace(/["']/g, '')}`;
-            });
-            promiseArray.push(promise);
-            if (promiseArray.length > 20) {
-                await Promise.all(promiseArray);
-                promiseArray = [];
-            }
-        } catch (error) {
-            saveError(error);
-        }
-    }
-    await Promise.all(promiseArray);
 }
 
 async function handleAnimeListCaptcha(page) {

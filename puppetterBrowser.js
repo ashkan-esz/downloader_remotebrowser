@@ -13,6 +13,7 @@ export async function getPageObj() {
         for (let i = 0; i < pages.length; i++) {
             if (pages[i].state === 'free') {
                 pages[i].state = 'pending';
+                pages[i].used++;
                 return pages[i];
             }
         }
@@ -25,7 +26,8 @@ export async function getPageObj() {
                 newPageObj = {
                     page: newPage,
                     state: 'pending',
-                    id: pageIdCounter
+                    id: pageIdCounter,
+                    used: 1,
                 };
                 pageIdCounter++;
                 pages.push(newPageObj);
@@ -38,6 +40,7 @@ export async function getPageObj() {
                 for (let i = 0; i < pages.length; i++) {
                     if (pages[i].state === 'free') {
                         pages[i].state = 'pending';
+                        pages[i].used++;
                         return pages[i];
                     }
                 }
@@ -49,10 +52,14 @@ export async function getPageObj() {
     }
 }
 
-export function setPageFree(id) {
+export async function setPageFree(id) {
     for (let i = 0; i < pages.length; i++) {
         if (pages[i].id === id) {
-            pages[i].state = 'free';
+            if (pages[i].used > 20) {
+                await closePage(id);
+            } else {
+                pages[i].state = 'free';
+            }
         }
     }
 }
