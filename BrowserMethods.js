@@ -16,7 +16,6 @@ axiosRetry(axios, {
         error.code === 'ENOTFOUND' ||
         error.code === 'ECONNABORTED' ||
         error.code === 'ETIMEDOUT' ||
-        error.code === 'SlowDown' ||
         (error.response &&
             error.response.status !== 429 &&
             error.response.status !== 404 &&
@@ -98,34 +97,25 @@ async function loadPage(url, isAnimelist, pageObj, canRetry = true) {
         }
 
         if (url.includes('digimovie')) {
-            await pageObj.page.waitForSelector('.container');
+            await pageObj.page.waitForSelector('.container', {timeout: 15000});
             if (url.match(/\/serie$|\/page\//g) || url.replace('https://', '').split('/').length === 1) {
                 await pageObj.page.waitForSelector('.main_site', {timeout: 15000});
                 await pageObj.page.waitForSelector('.alphapageNavi', {timeout: 15000});
             }
         }
 
-        if (url.includes('valamovie')) {
-            let clouadFlateID = await pageObj.page.$('.ray_id');
-            if (clouadFlateID) {
-                console.log('-----valamovie: cloudFlare');
-                await Promise.any([
-                    pageObj.page.waitForSelector('#mainSite'),
-                    pageObj.page.waitForNavigation(),
-                    pageObj.page.waitForSelector('.ray_id', {hidden: true, timeout: 15000}),
-                    pageObj.page.waitForSelector('.cf-browser-verification', {hidden: true, timeout: 15000}),
-                ]);
-            }
-        }
-
         return true;
     } catch (error) {
         await closePage(pageObj.id);
-        let temp = await getPageObj();
-        pageObj.id = temp.id;
-        pageObj.page = temp.page;
-        if (pageObj && canRetry) {
-            return await loadPage(url, isAnimelist, pageObj, false);
+        if (canRetry) {
+            let temp = await getPageObj();
+            if (temp) {
+                pageObj.id = temp.id;
+                pageObj.page = temp.page;
+                return await loadPage(url, isAnimelist, pageObj, false);
+            } else {
+                return false;
+            }
         } else {
             saveError(error);
             return false;
@@ -153,45 +143,50 @@ async function loginAnimeList(pageObj) {
 }
 
 async function uploadAnimeListSubtitles(pageObj) {
-    let pageContent = await pageObj.page.content();
-    let $ = cheerio.load(pageContent);
-    let links = $('a');
-    let subtitles = [];
-    for (let i = 0; i < links.length; i++) {
-        let href = $(links[i]).attr('href');
-        if (href && href.includes('/sub/download/')) {
-            let dedicated = true;
-            let linkInfo = $($(links[i]).prev().prev()).attr('title');
-            if (!linkInfo) {
-                let infoNode = $(links[i]).parent().parent().prev();
-                if (infoNode.hasClass('subs-send-links')) {
-                    dedicated = false;
-                    linkInfo = $(infoNode).attr('title');
+    try {
+        let pageContent = await pageObj.page.content();
+        let $ = cheerio.load(pageContent);
+        let links = $('a');
+        let subtitles = [];
+        for (let i = 0; i < links.length; i++) {
+            let href = $(links[i]).attr('href');
+            if (href && href.includes('/sub/download/')) {
+                let dedicated = true;
+                let linkInfo = $($(links[i]).prev().prev()).attr('title');
+                if (!linkInfo) {
+                    let infoNode = $(links[i]).parent().parent().prev();
+                    if (infoNode.hasClass('subs-send-links')) {
+                        dedicated = false;
+                        linkInfo = $(infoNode).attr('title');
+                    }
                 }
-            }
-            let translator = $($(links[i]).parent().next().children()[1]).text().replace('توسط', '').trim();
-            let episode = $($(links[i]).children()[1]).text()
-                .replace('تا', ' ')
-                .replace(/\s\s+/g, ' ')
-                .trim()
-                .replace(' ', '-');
+                let translator = $($(links[i]).parent().next().children()[1]).text().replace('توسط', '').trim();
+                let episode = $($(links[i]).children()[1]).text()
+                    .replace('تا', ' ')
+                    .replace(/\s\s+/g, ' ')
+                    .trim()
+                    .replace(' ', '-');
 
-            let subtitle = {
-                originalUrl: href,
-                sourceName: 'animelist',
-                dedicated: dedicated,
-                translator: translator,
-                info: linkInfo || '',
-                episode: episode,
-                type: 'direct',
-                fileName: '',
-                url: '',
-                insertData: new Date(),
+                let subtitle = {
+                    originalUrl: href,
+                    sourceName: 'animelist',
+                    dedicated: dedicated,
+                    translator: translator,
+                    info: linkInfo || '',
+                    episode: episode,
+                    type: 'direct',
+                    fileName: '',
+                    url: '',
+                    insertData: new Date(),
+                }
+                subtitles.push(subtitle);
             }
-            subtitles.push(subtitle);
         }
+        return subtitles;
+    } catch (error) {
+        saveError(error);
+        return [];
     }
-    return subtitles;
 }
 
 async function handleAnimeListCaptcha(page) {

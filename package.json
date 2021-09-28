@@ -8,6 +8,7 @@
   "scripts": {
     "start": "node -r esm app.js",
     "start_dev": "NODE_ENV=dev nodemon -r esm -r dotenv/config app.js",
+    "start_dev_traceGc": "NODE_ENV=dev node --trace_gc -r esm -r dotenv/config app.js",
     "test": "NODE_ENV=dev node -r esm test.js"
   },
   "dependencies": {

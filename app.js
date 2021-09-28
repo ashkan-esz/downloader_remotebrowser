@@ -42,8 +42,7 @@ app.use(function (req, res) {
 });
 
 app.use((err, req, res, next) => {
-    res.status(500);
-    res.send('Internal Server Error');
+    res.status(500).json({error: true, message: 'server error'});
 });
 
 app.listen(port, () => {
