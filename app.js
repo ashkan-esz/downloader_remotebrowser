@@ -7,6 +7,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
+const {closeBrowser} = require('./puppetterBrowser');
 const port = process.env.PORT || 3000;
 //---------------Routes-----------------
 import headlessBrowser from "./routes/headlessBrowser";
@@ -45,6 +46,11 @@ app.use((err, req, res, next) => {
     res.status(500).json({error: true, message: 'server error'});
 });
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
     console.log(`http://localhost:${port}`)
+});
+
+server.on('close', async () => {
+    await closeBrowser();
+    server.close();
 });

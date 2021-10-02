@@ -14,6 +14,7 @@ export async function getPageObj() {
             if (pages[i].state === 'free') {
                 pages[i].state = 'pending';
                 pages[i].used++;
+                pages[i].useTime = new Date();
                 return pages[i];
             }
         }
@@ -28,6 +29,7 @@ export async function getPageObj() {
                     state: 'pending',
                     id: pageIdCounter,
                     used: 1,
+                    useTime: new Date(),
                 };
                 pageIdCounter++;
                 pages.push(newPageObj);
@@ -36,11 +38,14 @@ export async function getPageObj() {
             return newPageObj;
         } else {
             while (true) {
-                await new Promise(resolve => setTimeout(resolve, 100));
+                await new Promise(resolve => setTimeout(resolve, 200));
+                let now = new Date();
                 for (let i = 0; i < pages.length; i++) {
-                    if (pages[i].state === 'free') {
+                    let timeElapsed = (now.getTime() - pages[i].useTime.getTime()) / 1000;
+                    if (pages[i].state === 'free' || timeElapsed > 28) {
                         pages[i].state = 'pending';
                         pages[i].used++;
+                        pages[i].useTime = new Date();
                         return pages[i];
                     }
                 }

@@ -212,7 +212,7 @@ async function handleAnimeListCaptcha(page) {
         if (!captchaCode) {
             tesseractCounter++;
             while (tesseractCounter > 1) {
-                await new Promise(resolve => setTimeout(resolve, 2));
+                await new Promise(resolve => setTimeout(resolve, 100));
             }
             let imageBuffer = Buffer.from(captchaImage, "base64");
             const worker = createWorker();
