@@ -5,11 +5,12 @@
     "node": "16.x"
   },
   "private": true,
+  "type": "module",
   "scripts": {
-    "start": "node --optimize_for_size --max_old_space_size=460 --gc_interval=100 -r esm app.js",
-    "start_dev": "NODE_ENV=dev nodemon -r esm -r dotenv/config app.js",
-    "start_dev_traceGc": "NODE_ENV=dev node --trace_gc -r esm -r dotenv/config app.js",
-    "test": "NODE_ENV=dev node -r esm test.js"
+    "start": "NODE_ENV=production node --optimize_for_size --max_old_space_size=460 --gc_interval=100 app.js",
+    "start_dev": "NODE_ENV=dev nodemon -r dotenv/config app.js",
+    "start_dev_traceGc": "NODE_ENV=dev node --trace_gc dotenv/config app.js",
+    "test": "NODE_ENV=dev node test.js"
   },
   "dependencies": {
     "@sentry/node": "^6.11.0",
@@ -19,11 +20,8 @@
     "body-parser": "^1.19.0",
     "cheerio": "^1.0.0-rc.10",
     "compression": "^1.7.4",
-    "cookie-parser": "~1.4.4",
     "cors": "^2.8.5",
-    "debug": "~2.6.9",
     "dotenv": "^10.0.0",
-    "esm": "^3.2.25",
     "express": "~4.16.1",
     "form-data": "^4.0.0",
     "helmet": "^4.6.0",

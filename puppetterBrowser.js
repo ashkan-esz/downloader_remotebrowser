@@ -1,5 +1,6 @@
-const puppeteer = require('puppeteer');
-const {saveError} = require("./saveError");
+import config from "./config/index.js";
+import puppeteer from "puppeteer";
+import {saveError} from "./saveError.js";
 
 let browser = null;
 let pages = [];
@@ -9,7 +10,7 @@ let creatingPageCounter = 0;
 
 export async function getPageObj() {
     try {
-        const tabNumber = Number(process.env.CRAWLER_BROWSER_TAB_COUNT) || 3;
+        const tabNumber = config.browserTabsCount;
         for (let i = 0; i < pages.length; i++) {
             if (pages[i].state === 'free') {
                 pages[i].state = 'pending';

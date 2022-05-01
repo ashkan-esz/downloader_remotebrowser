@@ -1,9 +1,12 @@
-const router = require('express').Router();
-const {getPageData} = require('../BrowserMethods');
+import config from "../config/index.js";
+import {Router} from "express";
+import {getPageData} from "../BrowserMethods.js";
+
+const router = Router();
 
 router.get('/', async (req, res) => {
     let {password, url} = req.query;
-    if (password === process.env.PASSWORD) {
+    if (password === config.serverPassword) {
         if (url) {
             let pageData = await getPageData(url);
             return res.json(pageData);

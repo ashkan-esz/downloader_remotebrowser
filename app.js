@@ -1,24 +1,24 @@
-require('dotenv').config({path: './.env'});
-const Sentry = require('@sentry/node');
-const Tracing = require('@sentry/tracing');
-const express = require('express');
+import config from "./config/index.js";
+import * as Sentry from "@sentry/node";
+import Tracing from "@sentry/tracing";
+import express from "express";
+import bodyParser from "body-parser";
+import cors from "cors";
+import helmet from "helmet";
+import compression from "compression";
+import {closeBrowser} from "./puppetterBrowser.js";
+//--------------------------------------
 const app = express();
-const bodyParser = require('body-parser');
-const cors = require('cors');
-const helmet = require('helmet');
-const compression = require('compression');
-const {closeBrowser} = require('./puppetterBrowser');
-const port = process.env.PORT || 3000;
 //---------------Routes-----------------
-import headlessBrowser from "./routes/headlessBrowser";
+import headlessBrowser from "./routes/headlessBrowser.js";
 //--------------middleware--------------
 Sentry.init({
-    dsn: process.env.SENTRY_DNS,
+    dsn: config.sentryDns,
     integrations: [
         new Sentry.Integrations.Http({tracing: true}),
         new Tracing.Integrations.Express({app}),
     ],
-    tracesSampleRate: 1.0,
+    tracesSampleRate: 0.02,
 });
 app.use(Sentry.Handlers.requestHandler());
 app.use(Sentry.Handlers.tracingHandler());
@@ -46,8 +46,8 @@ app.use((err, req, res, next) => {
     res.status(500).json({error: true, message: 'server error'});
 });
 
-const server = app.listen(port, () => {
-    console.log(`http://localhost:${port}`)
+const server = app.listen(config.port, () => {
+    console.log(`http://localhost:${config.port}`)
 });
 
 server.on('close', async () => {

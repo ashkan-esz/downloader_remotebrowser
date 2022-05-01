@@ -1,10 +1,11 @@
-const axios = require('axios').default;
-const axiosRetry = require("axios-retry");
-const cheerio = require('cheerio');
-const {getPageObj, setPageFree, closePage} = require('./puppetterBrowser');
-const {createWorker} = require('tesseract.js');
-const FormData = require('form-data');
-const {saveError} = require('./saveError');
+import config from "./config/index.js";
+import axios from "axios";
+import axiosRetry from "axios-retry";
+import * as cheerio from 'cheerio';
+import {getPageObj, setPageFree, closePage} from "./puppetterBrowser.js";
+import {createWorker} from "tesseract.js";
+import FormData from "form-data";
+import {saveError} from "./saveError.js";
 
 axiosRetry(axios, {
     retries: 3, // number of retries
@@ -17,6 +18,7 @@ axiosRetry(axios, {
         error.code === 'ECONNABORTED' ||
         error.code === 'ETIMEDOUT' ||
         (error.response &&
+            error.response.status < 500 &&
             error.response.status !== 429 &&
             error.response.status !== 404 &&
             error.response.status !== 403)
@@ -124,8 +126,8 @@ async function loadPage(url, isAnimelist, pageObj, canRetry = true) {
 }
 
 async function loginAnimeList(pageObj) {
-    let email = process.env.ANIMELIST_EMAIL;
-    let password = process.env.ANIMELIST_PASSWORD;
+    let email = config.animelistEmail;
+    let password = config.animelistPassword;
     let loginButton = await pageObj.page.$x("//a[contains(., 'ورود و ثبت نام')]");
     if (loginButton.length === 0) {
         return;
@@ -176,7 +178,7 @@ async function uploadAnimeListSubtitles(pageObj) {
                     episode: episode,
                     type: 'direct',
                     fileName: '',
-                    url: '',
+                    urlData: null,
                     insertData: new Date(),
                 }
                 subtitles.push(subtitle);
@@ -198,7 +200,7 @@ async function handleAnimeListCaptcha(page) {
         try {
             const formData = new FormData();
             formData.append('data', captchaImage);
-            let url = process.env.CAPTCHA_SOLVER_ENDPOINT;
+            let url = config.captchaSolverEndpoint;
             let result = await axios.post(url, formData, {
                 headers: formData.getHeaders()
             });
