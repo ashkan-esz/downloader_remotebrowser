@@ -61,7 +61,7 @@ export async function getPageObj() {
 export async function setPageFree(id) {
     for (let i = 0; i < pages.length; i++) {
         if (pages[i].id === id) {
-            if (pages[i].used > 20) {
+            if (pages[i].used > 25) {
                 await closePage(id);
             } else {
                 pages[i].state = 'free';
@@ -97,42 +97,27 @@ async function openNewPage() {
 async function configRequestInterception(page) {
     await page.setRequestInterception(true);
     page.on('request', (interceptedRequest) => {
+        let url = interceptedRequest.url();
         if (
-            interceptedRequest.url().endsWith('.png') ||
-            interceptedRequest.url().endsWith('.jpg') ||
-            interceptedRequest.url().endsWith('.jpeg') ||
-            interceptedRequest.url().endsWith('.gif') ||
-            interceptedRequest.url().endsWith('.svg') ||
-            interceptedRequest.url().endsWith('.ico') ||
-            interceptedRequest.url().endsWith('.woff') ||
-            interceptedRequest.url().endsWith('.woff2') ||
-            interceptedRequest.url().endsWith('.ttf') ||
-            interceptedRequest.url().endsWith('.css') ||
-            interceptedRequest.url().endsWith('.webp') ||
-            interceptedRequest.url().endsWith('.json') ||
-            interceptedRequest.url().endsWith('.mp4') ||
-            interceptedRequest.url().endsWith('all.js') ||
-            interceptedRequest.url().endsWith('footer-bundle.js') ||
-            interceptedRequest.url().endsWith('jquery.ui.position.min.js') ||
-            interceptedRequest.url().endsWith('uikit-icons.min.js') ||
-            interceptedRequest.url().includes('query.min.js') ||
-            interceptedRequest.url().includes('bootstrap.bundle.min.js') ||
-            interceptedRequest.url().includes('swiper.min.js') ||
-            interceptedRequest.url().includes('select2.min.js') ||
-            interceptedRequest.url().includes('flatpickr.min.js') ||
-            interceptedRequest.url().includes('slick.min.js') ||
-            interceptedRequest.url().includes('sweetalert2.min.js') ||
-            interceptedRequest.url().includes('site-reviews.js') ||
-            interceptedRequest.url().includes('range.js') ||
-            interceptedRequest.url().includes('jquery.magnific-popup.min.js') ||
-            interceptedRequest.url().includes('jquery-migrate.min.js') ||
-            interceptedRequest.url().includes('ajax.js') ||
-            interceptedRequest.url().includes('core.min.js') ||
-            interceptedRequest.url().includes('script.js') ||
-            interceptedRequest.url().includes('youtube') ||
-            interceptedRequest.url().includes('yektanet') ||
-            interceptedRequest.url().includes('google') ||
-            interceptedRequest.url().includes('zarpop')
+            url.match(/\.(png|jpg|jpeg|webp|gif|svg|ico|woff|woff2|ttfwebp|json|mp4)(\?_=\d)?$/) ||
+            url.match(/\.css(\?ver=((.{3,6})|\d{10}))?$/) ||
+            url.includes('iframe.html') ||
+            url.includes('fingerprint.html') ||
+            url.startsWith('data:image/svg+xml') ||
+            url.match(
+                /\.(all|footer-bundle|(jquery\.ui\.position\.min)|(uikit-icons\.min))\.js$/) ||
+            url.match(/\d\d\d\.js/) ||
+            url.match(
+                /(query|swiper|range|core|ajax|slick|select2|flatpickr|lazyload|dox|sweetalert2)\.min\.js/) ||
+            url.match(
+                /((bootstrap\.bundle)|(jquery\.magnific-popup)|(jquery-migrate)|(emoji-release)|(rocket-loader))\.min\.js/) ||
+            url.match(/(loader|script|jwplayer|main|site-reviews)\.js/) ||
+            url.includes('autoptimize') ||
+            url.includes('/litespeed-cache/assets/js/') ||
+            url.includes('/litespeed/js/') ||
+            url.includes('/wp-content/cache/min/1/') ||
+            url.includes('https://sentry') ||
+            url.match(/youtube|yektanet|google|zarpop/)
         ) {
             interceptedRequest.abort();
         } else {
