@@ -18,15 +18,17 @@ Need a customized headless browser.
 
 To run this project, you will need to add the following environment variables to your .env file
 
-| Prop                       | Description                                          | Required |
-| -------------------------- | ---------------------------------------------------- | -------- |
-| **`PORT`**                 | server port  | `false (default:3000)` |
-| **`PASSWORD`** | password of crawler | `true` |
-| **`SENTRY_DNS`** |  | `false` |
-| **`CAPTCHA_SOLVER_ENDPOINT`** | a captcha resolver service | `false` |
-| **`ANIMELIST_EMAIL`** | user to login anime source animelist | `false` |
-| **`ANIMELIST_PASSWORD`** | password to login anime source animelist | `false` |
-| **`CRAWLER_BROWSER_TAB_COUNT`** | browser tabs (no more than 3 if ram < 500mb) you can set to 7 if ram >= 1gb | `false (default: 3)` |
+| Prop                            | Description                                                                   | Required               |
+|---------------------------------|-------------------------------------------------------------------------------|------------------------|
+| **`PORT`**                      | server port                                                                   | `false (default:3000)` |
+| **`PASSWORD`**                  | password of crawler                                                           | `true`                 |
+| **`SENTRY_DNS`**                |                                                                               | `false`                |
+| **`CAPTCHA_SOLVER_ENDPOINT`**   | a captcha resolver service                                                    | `false`                |
+| **`ANIMELIST_EMAIL`**           | user to login anime source animelist                                          | `false`                |
+| **`ANIMELIST_PASSWORD`**        | password to login anime source animelist                                      | `false`                |
+| **`CRAWLER_BROWSER_TAB_COUNT`** | browser tabs (no more than 3 if ram < 500mb) you can set to 8 with ram >= 1gb | `false (default: 3)`   |
+| **`CRAWLER_MONITOR`**           | show crawler monitor from `puppeteer-cluster` package                         | `false`                |
+| **`PRINT_ERRORS`**              | show server errors in console                                                 | `false`                |
 
 ## Future updates
 

@@ -1,96 +1,50 @@
 import config from "./config/index.js";
-import puppeteer from "puppeteer";
+import {Cluster} from "puppeteer-cluster";
+import {handleSourceSpecificStuff} from "./BrowserMethods.js";
 import {saveError} from "./saveError.js";
 
-let browser = null;
-let pages = [];
-let pageIdCounter = 0;
-let creatingPageCounter = 0;
+let cluster = null;
 
+export async function executeUrl(url) {
+    try {
+        return await cluster.execute(url);
+    }catch (error) {
+        saveError(error);
+        return null;
+    }
+}
 
-export async function getPageObj() {
+export async function startBrowser() {
     try {
         const tabNumber = config.browserTabsCount;
-        for (let i = 0; i < pages.length; i++) {
-            if (pages[i].state === 'free') {
-                pages[i].state = 'pending';
-                pages[i].used++;
-                pages[i].useTime = new Date();
-                return pages[i];
-            }
+        const showManitor = (config.nodeEnv === 'dev' || config.crawlerMonitor === 'true');
+        const puppeteerOptions = {
+            headless: true,
+            args: [
+                "--no-sandbox",
+                "--single-process",
+                "--no-zygote"
+            ]
         }
+        cluster = await Cluster.launch({
+            concurrency: Cluster.CONCURRENCY_PAGE,
+            maxConcurrency: tabNumber,
+            puppeteerOptions: puppeteerOptions,
+            retryLimit: 2,
+            workerCreationDelay: 100,
+            timeout: 28000,
+            monitor: showManitor,
+        });
 
-        if (pages.length + creatingPageCounter < tabNumber) {
-            creatingPageCounter++;
-            let newPage = await openNewPage();
-            let newPageObj = null;
-            if (newPage) {
-                newPageObj = {
-                    page: newPage,
-                    state: 'pending',
-                    id: pageIdCounter,
-                    used: 1,
-                    useTime: new Date(),
-                };
-                pageIdCounter++;
-                pages.push(newPageObj);
-            }
-            creatingPageCounter--;
-            return newPageObj;
-        } else {
-            while (true) {
-                await new Promise(resolve => setTimeout(resolve, 200));
-                let now = new Date();
-                for (let i = 0; i < pages.length; i++) {
-                    let timeElapsed = (now.getTime() - pages[i].useTime.getTime()) / 1000;
-                    if (pages[i].state === 'free' || timeElapsed > 28) {
-                        pages[i].state = 'pending';
-                        pages[i].used++;
-                        pages[i].useTime = new Date();
-                        return pages[i];
-                    }
-                }
-            }
-        }
+        await cluster.task(async ({page, data: url}) => {
+            await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36');
+            await page.setViewport({width: 1280, height: 800});
+            await page.setDefaultTimeout(40000);
+            await configRequestInterception(page);
+            return await handleSourceSpecificStuff(url, page);
+        });
     } catch (error) {
         saveError(error);
-        return null;
-    }
-}
-
-export async function setPageFree(id) {
-    for (let i = 0; i < pages.length; i++) {
-        if (pages[i].id === id) {
-            if (pages[i].used > 25) {
-                await closePage(id);
-            } else {
-                pages[i].state = 'free';
-            }
-        }
-    }
-}
-
-async function openNewPage() {
-    try {
-        if (!browser || !browser.isConnected()) {
-            browser = await puppeteer.launch({
-                headless: true,
-                args: [
-                    "--no-sandbox",
-                    "--single-process",
-                    "--no-zygote"
-                ]
-            });
-        }
-        let page = await browser.newPage();
-        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36');
-        await page.setViewport({width: 1280, height: 800});
-        await page.setDefaultTimeout(40000);
-        await configRequestInterception(page);
-        return page;
-    } catch (error) {
-        saveError(error);
-        return null;
     }
 }
 
@@ -126,27 +80,10 @@ async function configRequestInterception(page) {
     });
 }
 
-export async function closePage(id) {
-    let selectedPage = null;
-    for (let i = 0; i < pages.length; i++) {
-        if (pages[i].id === id) {
-            selectedPage = pages[i];
-        }
-    }
-    if (selectedPage) {
-        pages = pages.filter(item => item.id !== id);
-        await selectedPage.page.close();
-    }
-}
-
 export async function closeBrowser() {
     try {
-        if (browser && browser.isConnected()) {
-            await browser.close();
-        }
-        browser = null;
-        pages = [];
-        pageIdCounter = 0;
+        await cluster.idle();
+        await cluster.close();
     } catch (error) {
         await saveError(error);
     }

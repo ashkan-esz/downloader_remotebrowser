@@ -2,10 +2,10 @@ import config from "./config/index.js";
 import axios from "axios";
 import axiosRetry from "axios-retry";
 import * as cheerio from 'cheerio';
-import {getPageObj, setPageFree, closePage} from "./puppetterBrowser.js";
 import {createWorker} from "tesseract.js";
 import FormData from "form-data";
 import {saveError} from "./saveError.js";
+import {executeUrl} from "./puppetterBrowser.js";
 
 axiosRetry(axios, {
     retries: 3, // number of retries
@@ -36,117 +36,82 @@ export async function getPageData(url) {
         error: false,
         message: 'ok',
     }
-
-    let temp = await handleSourceSpecificStuff(url);
-    if (temp) {
-        pageData = {...pageData, ...temp};
+    //todo : generate service result here
+    let execResult = await executeUrl(url);
+    if (execResult) {
+        pageData = {...pageData, ...execResult};
     }
-
     return pageData;
 }
 
-async function handleSourceSpecificStuff(url, canRetry = true) {
-    let pageObj = await getPageObj();
-    if (!pageObj) {
-        pageObj = await getPageObj();
-        if (!pageObj) {
-            return null;
-        }
-    }
-
+export async function handleSourceSpecificStuff(url, page) {
     let isAnimelist = url.includes('anime-list') || url.includes('animelist');
-    let pageLoaded = await loadPage(url, isAnimelist, pageObj);
+    let pageLoaded = await loadPage(url, isAnimelist, page);
     if (!pageLoaded) {
         return null;
     }
     let subtitles = [];
     if (isAnimelist && url.includes('/anime/')) {
-        let captchaResult = await handleAnimeListCaptcha(pageObj.page);
+        let captchaResult = await handleAnimeListCaptcha(page);
         if (!captchaResult) {
-            await closePage(pageObj.id);
-            if (canRetry) {
-                return await handleSourceSpecificStuff(url, false);
-            } else {
-                return null;
-            }
+            return null;
         }
-        try {
-            subtitles = await uploadAnimeListSubtitles(pageObj);
-        } catch (error) {
-            await closePage(pageObj.id);
-            if (canRetry) {
-                return await handleSourceSpecificStuff(url, false);
-            }
-        }
+        subtitles = await uploadAnimeListSubtitles(page);
     }
-    let data = {
-        pageContent: await pageObj.page.content(),
-        cookies: await pageObj.page.cookies(),
-        responseUrl: pageObj.page.url(),
+    return {
+        pageContent: await page.content(),
+        cookies: await page.cookies(),
+        responseUrl: page.url(),
         subtitles: subtitles,
-    }
-    await setPageFree(pageObj.id);
-    return data;
+    };
 }
 
-async function loadPage(url, isAnimelist, pageObj, canRetry = true) {
+async function loadPage(url, isAnimelist, page) {
     try {
         if (isAnimelist) {
-            await pageObj.page.goto(url, {waitUntil: "domcontentloaded"});
-            await loginAnimeList(pageObj);
+            await page.goto(url, {waitUntil: "domcontentloaded"});
+            await loginAnimeList(page);
         } else {
-            await pageObj.page.goto(url);
+            await page.goto(url);
         }
 
         if (url.includes('digimovie')) {
-            await pageObj.page.waitForSelector('.container', {timeout: 15000});
+            await page.waitForSelector('.container', {timeout: 15000});
             if (url.match(/\/serie$|\/page\//g) || url.replace('https://', '').split('/').length === 1) {
-                await pageObj.page.waitForSelector('.main_site', {timeout: 15000});
-                await pageObj.page.waitForSelector('.alphapageNavi', {timeout: 15000});
+                await page.waitForSelector('.main_site', {timeout: 15000});
+                await page.waitForSelector('.alphapageNavi', {timeout: 15000});
             }
         }
 
         return true;
     } catch (error) {
-        await closePage(pageObj.id);
-        if (canRetry) {
-            let temp = await getPageObj();
-            if (temp) {
-                pageObj.id = temp.id;
-                pageObj.page = temp.page;
-                return await loadPage(url, isAnimelist, pageObj, false);
-            } else {
-                return false;
-            }
-        } else {
-            saveError(error);
-            return false;
-        }
+        saveError(error);
+        return false;
     }
 }
 
-async function loginAnimeList(pageObj) {
+async function loginAnimeList(page) {
     let email = config.animelistEmail;
     let password = config.animelistPassword;
-    let loginButton = await pageObj.page.$x("//a[contains(., 'ورود و ثبت نام')]");
+    let loginButton = await page.$x("//a[contains(., 'ورود و ثبت نام')]");
     if (loginButton.length === 0) {
         return;
     }
     await Promise.all([
         loginButton[0].click(),
-        pageObj.page.waitForNavigation()
+        page.waitForNavigation()
     ]);
-    await pageObj.page.$eval('input[name=email]', (el, email) => el.value = email, email);
-    await pageObj.page.$eval('input[name=password]', (el, password) => el.value = password, password);
+    await page.$eval('input[name=email]', (el, email) => el.value = email, email);
+    await page.$eval('input[name=password]', (el, password) => el.value = password, password);
     await Promise.all([
-        pageObj.page.click('.login__sign-in'),
-        pageObj.page.waitForNavigation({waitUntil: "domcontentloaded"}),
+        page.click('.login__sign-in'),
+        page.waitForNavigation({waitUntil: "domcontentloaded"}),
     ]);
 }
 
-async function uploadAnimeListSubtitles(pageObj) {
+async function uploadAnimeListSubtitles(page) {
     try {
-        let pageContent = await pageObj.page.content();
+        let pageContent = await page.content();
         let $ = cheerio.load(pageContent);
         let links = $('a');
         let subtitles = [];

@@ -8,6 +8,7 @@ export default {
     sentryDns: process.env.SENTRY_DNS,
     serverPassword: process.env.PASSWORD,
     printErrors: process.env.PRINT_ERRORS,
+    crawlerMonitor: process.env.CRAWLER_MONITOR,
     browserTabsCount: Number(process.env.CRAWLER_BROWSER_TAB_COUNT) || 3,
     animelistEmail: process.env.ANIMELIST_EMAIL,
     animelistPassword: process.env.ANIMELIST_PASSWORD,

@@ -6,7 +6,7 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
-import {closeBrowser} from "./puppetterBrowser.js";
+import {closeBrowser, startBrowser} from "./puppetterBrowser.js";
 //--------------------------------------
 const app = express();
 //---------------Routes-----------------
@@ -27,6 +27,9 @@ app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
 app.use(cors());
 app.use(compression());
+//--------------------------------------
+//--------------------------------------
+await startBrowser();
 //--------------------------------------
 //--------------------------------------
 app.use('/headlessBrowser', headlessBrowser);
