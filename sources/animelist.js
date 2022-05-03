@@ -1,5 +1,4 @@
 import config from "../config/index.js";
-import * as cheerio from "cheerio";
 import {getCaptchaCode} from "../captchaSolver.js";
 import {saveError} from "../saveError.js";
 
@@ -20,53 +19,6 @@ export async function loginAnimeList(page) {
         page.click('.login__sign-in'),
         page.waitForNavigation({waitUntil: "domcontentloaded"}),
     ]);
-}
-
-export async function uploadAnimeListSubtitles(page) {
-    try {
-        let pageContent = await page.content();
-        let $ = cheerio.load(pageContent);
-        let links = $('a');
-        let subtitles = [];
-        for (let i = 0; i < links.length; i++) {
-            let href = $(links[i]).attr('href');
-            if (href && href.includes('/sub/download/')) {
-                let dedicated = true;
-                let linkInfo = $($(links[i]).prev().prev()).attr('title');
-                if (!linkInfo) {
-                    let infoNode = $(links[i]).parent().parent().prev();
-                    if (infoNode.hasClass('subs-send-links')) {
-                        dedicated = false;
-                        linkInfo = $(infoNode).attr('title');
-                    }
-                }
-                let translator = $($(links[i]).parent().next().children()[1]).text().replace('توسط', '').trim();
-                let episode = $($(links[i]).children()[1]).text()
-                    .replace('تا', ' ')
-                    .replace(/\s\s+/g, ' ')
-                    .trim()
-                    .replace(' ', '-');
-
-                let subtitle = {
-                    originalUrl: href,
-                    sourceName: 'animelist',
-                    dedicated: dedicated,
-                    translator: translator,
-                    info: linkInfo || '',
-                    episode: episode,
-                    type: 'direct',
-                    fileName: '',
-                    urlData: null,
-                    insertData: new Date(),
-                }
-                subtitles.push(subtitle);
-            }
-        }
-        return subtitles;
-    } catch (error) {
-        saveError(error);
-        return [];
-    }
 }
 
 export async function handleAnimeListCaptcha(page) {

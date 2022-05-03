@@ -38,7 +38,6 @@ res = {
     pageContent: null || HTML,
     cookies: Object,
     responseUrl: String,
-    subtitles: Array,
     retryCount: Int,
     error: Boolean, 
     message: String,

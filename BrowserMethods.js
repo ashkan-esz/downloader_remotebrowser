@@ -1,5 +1,5 @@
 import {executeUrl} from "./puppetterBrowser.js";
-import {loginAnimeList, uploadAnimeListSubtitles, handleAnimeListCaptcha} from "./sources/animelist.js";
+import {loginAnimeList, handleAnimeListCaptcha} from "./sources/animelist.js";
 import {saveError} from "./saveError.js";
 
 export async function getPageData(url) {
@@ -7,7 +7,6 @@ export async function getPageData(url) {
         pageContent: null,
         cookies: {},
         responseUrl: '',
-        subtitles: [],
         retryCount: 0,
     }
     let execResult = await executeUrl(url);
@@ -24,19 +23,18 @@ export async function handleSourceSpecificStuff(url, page) {
     if (!pageLoaded) {
         return null;
     }
-    let subtitles = [];
+
     if (isAnimeList && url.includes('/anime/')) {
         let captchaResult = await handleAnimeListCaptcha(page);
         if (!captchaResult) {
             return null;
         }
-        subtitles = await uploadAnimeListSubtitles(page);
     }
+
     return {
         pageContent: await page.content(),
         cookies: await page.cookies(),
         responseUrl: page.url(),
-        subtitles: subtitles,
     };
 }
 
