@@ -5,12 +5,23 @@ import {saveError} from "./saveError.js";
 
 let cluster = null;
 
-export async function executeUrl(url) {
+export async function executeUrl(url, retryCounter = 0) {
     try {
-        return await cluster.execute(url);
-    }catch (error) {
+        let res = await cluster.execute(url);
+        if (!res && retryCounter < 1) {
+            retryCounter++;
+            await new Promise(resolve => setTimeout(resolve, 500));
+            return await executeUrl(url, retryCounter);
+        }
+        return {res: res, retryCounter: retryCounter};
+    } catch (error) {
+        if (retryCounter < 1) {
+            retryCounter++;
+            await new Promise(resolve => setTimeout(resolve, 500));
+            return await executeUrl(url, retryCounter);
+        }
         saveError(error);
-        return null;
+        return {res: null, retryCounter: retryCounter};
     }
 }
 

@@ -30,6 +30,22 @@ To run this project, you will need to add the following environment variables to
 | **`CRAWLER_MONITOR`**           | show crawler monitor from `puppeteer-cluster` package                         | `false`                |
 | **`PRINT_ERRORS`**              | show server errors in console                                                 | `false`                |
 
+## API
+
+- [GET /headlessBrowser/?password=PASSWORD&url=URL](routes/headlessBrowser.js)
+```javascript
+res = {
+    pageContent: null || HTML,
+    cookies: Object,
+    responseUrl: String,
+    subtitles: Array,
+    retryCount: Int,
+    error: Boolean, 
+    message: String,
+}
+```
+
+
 ## Future updates
 
 - [x]  Efficient and low memory usage web crawler.
