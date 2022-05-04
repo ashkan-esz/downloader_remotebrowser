@@ -32,7 +32,7 @@ To run this project, you will need to add the following environment variables to
 
 ## API
 
-- [GET /headlessBrowser/?password=PASSWORD&url=URL](routes/headlessBrowser.js)
+- [GET /headlessBrowser/?password=PASSWORD&url=URL&cookieOnly=Boolean](routes/headlessBrowser.js)
 ```javascript
 res = {
     pageContent: null || HTML,

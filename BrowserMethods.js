@@ -2,14 +2,14 @@ import {executeUrl} from "./puppetterBrowser.js";
 import {loginAnimeList, handleAnimeListCaptcha} from "./sources/animelist.js";
 import {saveError} from "./saveError.js";
 
-export async function getPageData(url) {
+export async function getPageData(url, cookieOnly) {
     let pageData = {
         pageContent: null,
         cookies: {},
         responseUrl: '',
         retryCount: 0,
     }
-    let execResult = await executeUrl(url);
+    let execResult = await executeUrl(url, cookieOnly);
     pageData.retryCount = execResult.retryCounter;
     if (execResult.res) {
         pageData = {...pageData, ...execResult.res};
@@ -17,7 +17,7 @@ export async function getPageData(url) {
     return pageData;
 }
 
-export async function handleSourceSpecificStuff(url, page) {
+export async function handleSourceSpecificStuff(url, page, cookieOnly) {
     let isAnimeList = url.match(/anime-?list/i);
     let pageLoaded = await loadPage(url, isAnimeList, page);
     if (!pageLoaded) {
@@ -32,7 +32,7 @@ export async function handleSourceSpecificStuff(url, page) {
     }
 
     return {
-        pageContent: await page.content(),
+        pageContent: cookieOnly ? null : await page.content(),
         cookies: await page.cookies(),
         responseUrl: page.url(),
     };

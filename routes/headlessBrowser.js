@@ -5,10 +5,10 @@ import {getPageData} from "../BrowserMethods.js";
 const router = Router();
 
 router.get('/', async (req, res) => {
-    let {password, url} = req.query;
+    let {password, url, cookieOnly} = req.query;
     if (password === config.serverPassword) {
         if (url) {
-            let pageData = await getPageData(url);
+            let pageData = await getPageData(url, cookieOnly === 'true');
             pageData.error = pageData.pageContent === null;
             pageData.message = pageData.pageContent === null ? 'error' : 'ok';
             return res.json(pageData);
