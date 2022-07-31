@@ -1,7 +1,11 @@
 import config from "./config/index.js";
 import {Cluster} from "puppeteer-cluster";
+import puppeteer from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import {handleSourceSpecificStuff} from "./BrowserMethods.js";
 import {saveError} from "./saveError.js";
+
+puppeteer.use(StealthPlugin());
 
 let cluster = null;
 
@@ -38,6 +42,7 @@ export async function startBrowser() {
             ]
         }
         cluster = await Cluster.launch({
+            puppeteer: puppeteer,
             concurrency: Cluster.CONCURRENCY_PAGE,
             maxConcurrency: tabNumber,
             puppeteerOptions: puppeteerOptions,
