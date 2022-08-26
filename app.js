@@ -7,6 +7,7 @@ import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
 import {closeBrowser, startBrowser} from "./puppetterBrowser.js";
+import {saveError} from "./saveError.js";
 //--------------------------------------
 const app = express();
 //---------------Routes-----------------
@@ -57,3 +58,17 @@ server.on('close', async () => {
     await closeBrowser();
     server.close();
 });
+
+process
+    .on('unhandledRejection', async (reason, p) => {
+        // Use your own logger here
+        console.error(reason, 'Unhandled Rejection at Promise', p);
+        reason.pp = p;
+        await saveError(reason);
+    })
+    .on('uncaughtException', async err => {
+        console.error(err, 'Uncaught Exception thrown');
+        await saveError(err);
+        // Optional: Ensure process will stop after this
+        process.exit(1);
+    });
