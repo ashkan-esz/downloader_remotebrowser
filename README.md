@@ -41,6 +41,7 @@ res = {
     retryCount: Int,
     error: Boolean, 
     message: String,
+    pageTitle: String,
 }
 ```
 

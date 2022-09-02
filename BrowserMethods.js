@@ -8,6 +8,7 @@ export async function getPageData(url, cookieOnly) {
         cookies: {},
         responseUrl: '',
         retryCount: 0,
+        pageTitle: '',
     }
     let execResult = await executeUrl(url, cookieOnly);
     pageData.retryCount = execResult.retryCounter;
@@ -35,6 +36,7 @@ export async function handleSourceSpecificStuff(url, page, cookieOnly) {
         pageContent: cookieOnly ? null : await page.content(),
         cookies: await page.cookies(),
         responseUrl: page.url(),
+        pageTitle: await page.title(),
     };
 }
 
