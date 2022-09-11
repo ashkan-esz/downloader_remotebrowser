@@ -2,6 +2,10 @@ import {executeUrl} from "./puppetterBrowser.js";
 import {loginAnimeList, handleAnimeListCaptcha} from "./sources/animelist.js";
 import {saveError} from "./saveError.js";
 
+let browserStatus = {
+    digimovieTimeoutErrorTime: 0,
+};
+
 export async function getPageData(url, cookieOnly) {
     let pageData = {
         pageContent: null,
@@ -48,18 +52,34 @@ async function loadPage(url, isAnimelist, page) {
         } else {
             await page.goto(url);
         }
+    } catch (error) {
+        error.url = url;
+        saveError(error, true);
+        return false;
+    }
 
+    try {
         if (url.includes('digimovie')) {
             await page.waitForSelector('.container', {timeout: 15000});
-            if (url.match(/\/serie$|\/page\//g) || url.replace('https://', '').split('/').length === 1) {
-                await page.waitForSelector('.main_site', {timeout: 15000});
+            if (url.match(/\/series?$|\/page\//g) || url.replace('https://', '').split('/').length === 1) {
+                await Promise.any([
+                    page.waitForSelector('.main_site', {timeout: 15000}),
+                    page.waitForSelector('.body_favorites', {timeout: 15000})
+                ]);
                 await page.waitForSelector('.alphapageNavi', {timeout: 15000});
             }
         }
-
         return true;
     } catch (error) {
-        saveError(error);
+        if (error.message && (error.message.match(/timeout .+ exceeded/) || error.message === 'All promises were rejected')) {
+            if (Date.now() - browserStatus.digimovieTimeoutErrorTime > 5 * 60 * 1000) {  //10min
+                browserStatus.digimovieTimeoutErrorTime = Date.now();
+                error.url = url;
+                saveError(error, true);
+            }
+        } else {
+            saveError(error);
+        }
         return false;
     }
 }

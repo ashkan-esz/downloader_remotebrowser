@@ -24,7 +24,8 @@ export async function executeUrl(url, cookieOnly, retryCounter = 0) {
             await new Promise(resolve => setTimeout(resolve, 500));
             return await executeUrl(url, cookieOnly, retryCounter);
         }
-        saveError(error);
+        error.url = url;
+        saveError(error, true);
         return {res: null, retryCounter: retryCounter};
     }
 }
