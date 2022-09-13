@@ -49,6 +49,11 @@ async function loadPage(url, isAnimelist, page) {
         if (isAnimelist) {
             await page.goto(url, {waitUntil: "domcontentloaded"});
             await loginAnimeList(page);
+        } else if (url.includes('digimovie')) {
+            if (!url.match(/\/$/)) {
+                url = url + '/';
+            }
+            await page.goto(url, {waitUntil: "domcontentloaded"});
         } else {
             await page.goto(url);
         }
@@ -72,7 +77,7 @@ async function loadPage(url, isAnimelist, page) {
         return true;
     } catch (error) {
         if (error.message && (error.message.match(/timeout .+ exceeded/) || error.message === 'All promises were rejected')) {
-            if (Date.now() - browserStatus.digimovieTimeoutErrorTime > 5 * 60 * 1000) {  //10min
+            if (Date.now() - browserStatus.digimovieTimeoutErrorTime > 10 * 60 * 1000) {  //10min
                 browserStatus.digimovieTimeoutErrorTime = Date.now();
                 error.url = url;
                 saveError(error, true);

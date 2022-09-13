@@ -1,11 +1,19 @@
 import config from "./config/index.js";
 import {Cluster} from "puppeteer-cluster";
+import * as originalPuppeteer from 'puppeteer';
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+import AdblockerPlugin from 'puppeteer-extra-plugin-adblocker';
 import {handleSourceSpecificStuff} from "./BrowserMethods.js";
 import {saveError} from "./saveError.js";
 
 puppeteer.use(StealthPlugin());
+puppeteer.use(
+    AdblockerPlugin({
+        // Optionally enable Cooperative Mode for several request interceptors
+        interceptResolutionPriority: originalPuppeteer.DEFAULT_INTERCEPT_RESOLUTION_PRIORITY
+    })
+);
 
 let cluster = null;
 
@@ -47,7 +55,7 @@ export async function startBrowser() {
             concurrency: Cluster.CONCURRENCY_PAGE,
             maxConcurrency: tabNumber,
             puppeteerOptions: puppeteerOptions,
-            retryLimit: 2,
+            retryLimit: 1,
             workerCreationDelay: 100,
             timeout: 28000,
             monitor: showManitor,
@@ -74,7 +82,8 @@ async function configRequestInterception(page) {
             url.match(/\.css(\?ver=((.{3,6})|\d{10}))?$/) ||
             url.includes('iframe.html') ||
             url.includes('fingerprint.html') ||
-            url.startsWith('data:image/svg+xml') ||
+            url.startsWith('data:image/') ||
+            url.startsWith('data:text/') ||
             url.match(
                 /[.\/](all|spf|network|www-tampering)\.js$/) ||
             url.match(
@@ -83,12 +92,14 @@ async function configRequestInterception(page) {
                 /[.\/]((custom-elements-es5-adapter)|(webcomponents-sd)|(scheduler)|(www-i18n-constants))\.js$/) ||
             url.match(/\d\d\d\.js/) ||
             url.match(
-                /(query|swiper|range|core|ajax|slick|select2|flatpickr|lazyload|dox|sweetalert2)\.min\.js/) ||
+                /(query|swiper|range|core|ajax|slick|select2|flatpickr|lazyload|dox|sweetalert2|mouse|slider|vimeo)\.min\.js/) ||
             url.match(
                 /((bootstrap\.bundle)|(jquery\.magnific-popup)|(jquery-migrate)|(emoji-release)|(rocket-loader))\.min\.js/) ||
             url.match(
-                /((web-animations-next-lite)|(intersection-observer))\.min\.js/) ||
-            url.match(/(loader|script|jwplayer|main|site-reviews)\.js/) ||
+                /((web-animations-next-lite)|(intersection-observer)|(comment-reply)|(email-decode)|(jquery-\d+(\.\d+)*))\.min\.js/) ||
+            url.match(
+                /(mediaelement(-.+)*)\.min\.js/) ||
+            url.match(/(loader|script|jwplayer|main|site-reviews|invisible)\.js/) ||
             url.includes('autoptimize') ||
             url.includes('/litespeed-cache/assets/js/') ||
             url.includes('/litespeed/js/') ||

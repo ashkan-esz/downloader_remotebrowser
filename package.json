@@ -27,6 +27,7 @@
     "puppeteer": "^17.1.3",
     "puppeteer-cluster": "^0.23.0",
     "puppeteer-extra": "^3.3.4",
+    "puppeteer-extra-plugin-adblocker": "^2.13.5",
     "puppeteer-extra-plugin-stealth": "^2.11.1",
     "tesseract.js": "^3.0.2"
   },
