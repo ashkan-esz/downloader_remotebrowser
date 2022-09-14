@@ -65,13 +65,13 @@ async function loadPage(url, isAnimelist, page) {
 
     try {
         if (url.includes('digimovie')) {
-            await page.waitForSelector('.container', {timeout: 15000});
+            await page.waitForSelector('.container', {timeout: 10000});
             if (url.match(/\/series?$|\/page\//g) || url.replace('https://', '').split('/').length === 1) {
                 await Promise.any([
-                    page.waitForSelector('.main_site', {timeout: 15000}),
-                    page.waitForSelector('.body_favorites', {timeout: 15000})
+                    page.waitForSelector('.main_site', {timeout: 10000}),
+                    page.waitForSelector('.body_favorites', {timeout: 10000})
                 ]);
-                await page.waitForSelector('.alphapageNavi', {timeout: 15000});
+                await page.waitForSelector('.alphapageNavi', {timeout: 10000});
             }
         }
         return true;
