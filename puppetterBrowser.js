@@ -6,6 +6,8 @@ import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import AdblockerPlugin from 'puppeteer-extra-plugin-adblocker';
 import {handleSourceSpecificStuff} from "./BrowserMethods.js";
 import {saveError} from "./saveError.js";
+import {FingerprintGenerator} from "fingerprint-generator";
+import {FingerprintInjector} from "fingerprint-injector";
 
 puppeteer.use(StealthPlugin());
 puppeteer.use(
@@ -14,6 +16,16 @@ puppeteer.use(
         interceptResolutionPriority: originalPuppeteer.DEFAULT_INTERCEPT_RESOLUTION_PRIORITY
     })
 );
+
+const fingerprintInjector = new FingerprintInjector();
+const fingerprintGenerator = new FingerprintGenerator({
+    browsers: [
+        {name: 'firefox', minVersion: 81},
+        {name: 'chrome', minVersion: 88}
+    ],
+    devices: ['desktop'],
+    operatingSystems: ['windows', 'linux'],
+});
 
 let cluster = null;
 
@@ -62,7 +74,8 @@ export async function startBrowser() {
         });
 
         await cluster.task(async ({page, data: {url, cookieOnly}}) => {
-            await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36');
+            const fingerprintWithHeaders = fingerprintGenerator.getFingerprint();
+            await fingerprintInjector.attachFingerprintToPuppeteer(page, fingerprintWithHeaders);
             await page.setViewport({width: 1280, height: 800});
             await page.setDefaultTimeout(40000);
             await configRequestInterception(page);
