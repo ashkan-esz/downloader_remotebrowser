@@ -1,11 +1,11 @@
-import config from "./config/index.js";
+import config from "../config/index.js";
 import {Cluster} from "puppeteer-cluster";
 import * as originalPuppeteer from 'puppeteer';
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import AdblockerPlugin from 'puppeteer-extra-plugin-adblocker';
 import {handleSourceSpecificStuff} from "./BrowserMethods.js";
-import {saveError} from "./saveError.js";
+import {saveError} from "../saveError.js";
 import {FingerprintGenerator} from "fingerprint-generator";
 import {FingerprintInjector} from "fingerprint-injector";
 

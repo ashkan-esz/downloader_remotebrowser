@@ -32,7 +32,7 @@ To run this project, you will need to add the following environment variables to
 
 ## API
 
-- [GET /headlessBrowser/?password=PASSWORD&url=URL&cookieOnly=Boolean](routes/headlessBrowser.js)
+- [GET /headlessBrowser/?password=PASSWORD&url=URL&cookieOnly=Boolean](api/routes/headlessBrowser.js)
 ```javascript
 res = {
     pageContent: null || HTML,
@@ -44,6 +44,22 @@ res = {
     pageTitle: String,
 }
 ```
+
+<br/>
+
+- [GET /files/list/?password=PASSWORD](api/routes/filesRouter.js)
+
+
+<br/>
+
+- [GET /files/removeFile/[fileName]/?newFileStatus=Boolean&password=PASSWORD](api/routes/filesRouter.js)
+
+
+<br/>
+
+- [GET /files/downloadFile/[downloadLink]?alsoUploadFile=Boolean&password=PASSWORD](api/routes/filesRouter.js)
+
+<br/>
 
 
 ## Future updates

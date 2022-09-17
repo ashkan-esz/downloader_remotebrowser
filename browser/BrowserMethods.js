@@ -1,6 +1,6 @@
 import {executeUrl} from "./puppetterBrowser.js";
-import {loginAnimeList, handleAnimeListCaptcha} from "./sources/animelist.js";
-import {saveError} from "./saveError.js";
+import {loginAnimeList, handleAnimeListCaptcha} from "../sources/animelist.js";
+import {saveError} from "../saveError.js";
 
 let browserStatus = {
     digimovieTimeoutErrorTime: 0,

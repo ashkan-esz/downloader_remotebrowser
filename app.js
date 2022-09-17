@@ -6,12 +6,13 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
-import {closeBrowser, startBrowser} from "./puppetterBrowser.js";
+import {closeBrowser, startBrowser} from "./browser/puppetterBrowser.js";
 import {saveError} from "./saveError.js";
 //--------------------------------------
 const app = express();
 //---------------Routes-----------------
-import headlessBrowser from "./routes/headlessBrowser.js";
+import headlessBrowser from "./api/routes/headlessBrowser.js";
+import filesRouter from "./api/routes/filesRouter.js";
 //--------------middleware--------------
 Sentry.init({
     dsn: config.sentryDns,
@@ -28,12 +29,14 @@ app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
 app.use(cors());
 app.use(compression());
+app.use(express.static('downloadFiles'));
 //--------------------------------------
 //--------------------------------------
 await startBrowser();
 //--------------------------------------
 //--------------------------------------
 app.use('/headlessBrowser', headlessBrowser);
+app.use('/files', filesRouter);
 
 app.use(Sentry.Handlers.errorHandler({
     shouldHandleError(error) {
