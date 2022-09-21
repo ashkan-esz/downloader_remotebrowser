@@ -8,6 +8,7 @@ import {handleSourceSpecificStuff} from "./BrowserMethods.js";
 import {saveError} from "../saveError.js";
 import {FingerprintGenerator} from "fingerprint-generator";
 import {FingerprintInjector} from "fingerprint-injector";
+import {uploadFileToBlackHole} from "../sources/blackHole.js";
 
 puppeteer.use(StealthPlugin());
 puppeteer.use(
@@ -29,20 +30,20 @@ const fingerprintGenerator = new FingerprintGenerator({
 
 let cluster = null;
 
-export async function executeUrl(url, cookieOnly, retryCounter = 0) {
+export async function executeUrl(url, cookieOnly, fileNames = [], retryCounter = 0) {
     try {
-        let res = await cluster.execute({url, cookieOnly});
+        let res = await cluster.execute({url, cookieOnly, fileNames});
         if (!res && retryCounter < 1) {
             retryCounter++;
             await new Promise(resolve => setTimeout(resolve, 500));
-            return await executeUrl(url, cookieOnly, retryCounter);
+            return await executeUrl(url, cookieOnly, fileNames, retryCounter);
         }
         return {res: res, retryCounter: retryCounter};
     } catch (error) {
         if (retryCounter < 1) {
             retryCounter++;
             await new Promise(resolve => setTimeout(resolve, 500));
-            return await executeUrl(url, cookieOnly, retryCounter);
+            return await executeUrl(url, cookieOnly, fileNames, retryCounter);
         }
         error.url = url;
         saveError(error, true);
@@ -69,16 +70,26 @@ export async function startBrowser() {
             puppeteerOptions: puppeteerOptions,
             retryLimit: 1,
             workerCreationDelay: 100,
-            timeout: 28000,
+            timeout: 60 * 60 * 1000, //60 min
             monitor: showManitor,
         });
 
-        await cluster.task(async ({page, data: {url, cookieOnly}}) => {
+        await cluster.task(async ({page, data: {url, cookieOnly, fileNames}}) => {
+            if (url.includes('blackHole.') || fileNames.length > 0) {
+                await page.browser()
+                    .defaultBrowserContext()
+                    .overridePermissions('https://blackhole.run', ['clipboard-read', 'clipboard-write']);
+            }
+
             const fingerprintWithHeaders = fingerprintGenerator.getFingerprint();
             await fingerprintInjector.attachFingerprintToPuppeteer(page, fingerprintWithHeaders);
             await page.setViewport({width: 1280, height: 800});
-            await page.setDefaultTimeout(40000);
             await configRequestInterception(page);
+            if (url.includes('blackHole.') || fileNames.length > 0) {
+                await page.setDefaultTimeout(60000);
+                return await uploadFileToBlackHole(page, fileNames);
+            }
+            await page.setDefaultTimeout(40000);
             return await handleSourceSpecificStuff(url, page, cookieOnly);
         });
     } catch (error) {

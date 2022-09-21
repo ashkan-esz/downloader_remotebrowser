@@ -7,6 +7,7 @@ import nou from 'node-os-utils';
 import checkDiskSpace from 'check-disk-space';
 import {saveError} from "../saveError.js";
 import axios from "axios";
+import {executeUrl} from "../browser/puppetterBrowser.js";
 
 const promisifiedFinished = promisify(stream.finished);
 
@@ -14,6 +15,38 @@ const uploadAndDownloadStatus = {
     uploadAndDownloadFiles: [],
     downloadCounter: 0,
     uploadCounter: 0,
+}
+
+try {
+    await fs.promises.mkdir(path.join('.', 'downloadFiles'));
+} catch (error) {
+}
+
+try {
+    let dir = await fs.promises.readdir(path.join('.', 'downloadFiles'));
+    let filesPromise = dir.map(file => fs.promises.stat(path.join('.', 'downloadFiles', file)));
+    let files = (await Promise.allSettled(filesPromise)).map(item => item.value);
+    for (let i = 0; i < dir.length; i++) {
+        if (!uploadAndDownloadStatus.uploadAndDownloadFiles.find(item => item.fileName === dir[i])) {
+            uploadAndDownloadStatus.uploadAndDownloadFiles.push({
+                fileName: dir[i],
+                size: (files[i]?.size || 0) / (1024 * 1024),
+                startDownload: '',
+                endDownload: '',
+                downloadLink: '',
+                isDownloading: false,
+                startUpload: '',
+                endUpload: '',
+                uploadLink: '',
+                isUploading: false,
+            });
+        }
+    }
+} catch (error) {
+}
+
+export function getUploadAndDownloadStatus() {
+    return uploadAndDownloadStatus;
 }
 
 export async function getFilesStatus() {
@@ -27,13 +60,13 @@ export async function getFilesStatus() {
         let memoryStatus = await nou.mem.info();
 
         let result = {
-            files: dir.map((file, index) => {
-                let temp = uploadAndDownloadStatus.uploadAndDownloadFiles.find(item => item.fileName === file);
+            files: dir.map((fileName, index) => {
+                let temp = uploadAndDownloadStatus.uploadAndDownloadFiles.find(item => item.fileName === fileName);
                 if (temp) {
                     return temp;
                 }
                 return ({
-                    fileName: file,
+                    fileName: fileName,
                     size: (files[index]?.size || 0) / (1024 * 1024),
                     startDownload: '',
                     endDownload: '',
@@ -129,11 +162,29 @@ export async function downloadFile(downloadLink, alsoUploadFile = false) {
         let fileName = response.request.res.responseUrl.split('/').pop().split('?')[0];
         let fileSize = (Number(response.headers['content-length']) || 0) / (1024 * 1024);
 
-        if (uploadAndDownloadStatus.uploadAndDownloadFiles.find(item => item.fileName === fileName && item.isDownloading)) {
-            return {
-                fileData: null,
-                message: 'File is downloading',
-            };
+        let checkFile = uploadAndDownloadStatus.uploadAndDownloadFiles.find(item => item.fileName === fileName);
+        if (checkFile) {
+            if (checkFile.isDownloading) {
+                return {
+                    fileData: null,
+                    message: 'File is downloading',
+                };
+            }
+            if (checkFile.size === fileSize) {
+                checkFile.downloadLink = downloadLink;
+                if (alsoUploadFile) {
+                    await uploadFiles([fileName]);
+                    return {
+                        fileData: checkFile,
+                        message: 'ok',
+                    };
+                }
+
+                return {
+                    fileData: null,
+                    message: 'File already exist',
+                };
+            }
         }
 
         const __filename = fileURLToPath(import.meta.url);
@@ -155,6 +206,11 @@ export async function downloadFile(downloadLink, alsoUploadFile = false) {
         addNewDownloadingFile(fileName, fileSize, downloadLink, startTime);
         await promisifiedFinished(writeStream); //this is a Promise
         let fileData = fileDownloadEnd(fileName);
+
+        if (alsoUploadFile) {
+            await uploadFiles([fileName]);
+        }
+
         return {
             fileData: fileData,
             message: 'ok',
@@ -167,6 +223,13 @@ export async function downloadFile(downloadLink, alsoUploadFile = false) {
         };
     }
 }
+
+export async function uploadFiles(fileNames) {
+    return await executeUrl('', false, fileNames);
+}
+
+//-------------------------------------------------
+//-------------------------------------------------
 
 function addNewDownloadingFile(fileName, fileSize, downloadLink, startTime) {
     uploadAndDownloadStatus.uploadAndDownloadFiles.push({
@@ -190,6 +253,30 @@ function fileDownloadEnd(fileName) {
         fileData.endDownload = new Date();
         fileData.isDownloading = false;
         uploadAndDownloadStatus.downloadCounter--;
+    }
+    return fileData;
+}
+
+export function uploadFileStart(fileName) {
+    let fileData = uploadAndDownloadStatus.uploadAndDownloadFiles.find(item => item.fileName === fileName);
+    if (fileData) {
+        fileData.startUpload = new Date();
+        fileData.isUploading = false;
+        uploadAndDownloadStatus.uploadCounter++;
+    }
+    return fileData;
+}
+
+export async function uploadFileEnd(fileName, uploadLink) {
+    let fileData = uploadAndDownloadStatus.uploadAndDownloadFiles.find(item => item.fileName === fileName);
+    if (fileData) {
+        fileData.endUpload = new Date();
+        fileData.isUploading = false;
+        fileData.uploadLink = uploadLink;
+        uploadAndDownloadStatus.uploadCounter--;
+        await fs.promises.unlink(path.join('.', 'downloadFiles', fileName));
+        uploadAndDownloadStatus.uploadAndDownloadFiles = uploadAndDownloadStatus.uploadAndDownloadFiles
+            .filter(item => item.fileName !== fileName);
     }
     return fileData;
 }
