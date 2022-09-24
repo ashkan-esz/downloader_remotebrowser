@@ -31,6 +31,18 @@ To run this project, you will need to add the following environment variables to
 | **`PRINT_ERRORS`**              | show server errors in console                                                 | `false`                  |
 | **`BLACKHOLE_PASSWORD`**        | password needed to login to [blackHole](https://blackhole.run)                | `true`                   |
 | **`BLACKHOLE_FILE_SIZE_LIMIT`** | uploading file size limit                                                     | `false --> default: 512` |
+| **`DATABASE_URL`**              | mongodb connection url                                                        | `false`                  |
+| **`DISABLE_UPLOAD_JOB`**        | if set to true, upload job will be disabled                                   | `false`                  |
+| **`TOTAL_MEMORY_AMOUNT`**       | amount of memory that app can use, by default its 512mb                       | `false`                  |
+| **`TOTAL_DISK_SPACE`**          | amount of disk space that app can use, by default its 500mb                   | `false`                  |
+| **`DEFAULT_USED_DISK_SPACE`**   | amount of disk space that app use in init state, by default its 0mb           | `false`                  |
+
+<br/>
+
+## Upload Job
+
+**NOTE: Upload job run every 1 hour. check db collection ('torrentLinks') and download them first and then upload them
+to blackHole system, save upload link to db.**
 
 ## API
 
@@ -50,7 +62,7 @@ res = {
 
 <br/>
 
-- [GET /files/list/?password=PASSWORD](api/routes/filesRouter.js)
+- [GET /files/status?password=PASSWORD](api/routes/filesRouter.js)
 
 <br/>
 
@@ -58,7 +70,7 @@ res = {
 
 <br/>
 
-- [GET /files/downloadFile/[downloadLink]?alsoUploadFile=Boolean&password=PASSWORD](api/routes/filesRouter.js)
+- [GET /files/downloadAndUploadFile/[downloadLink]?password=PASSWORD](api/routes/filesRouter.js)
 
 <br/>
 

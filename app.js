@@ -6,6 +6,7 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
+import {startAgenda} from "./agenda/index.js";
 import {closeBrowser, startBrowser} from "./browser/puppetterBrowser.js";
 import {saveError} from "./saveError.js";
 //--------------------------------------
@@ -32,6 +33,7 @@ app.use(compression());
 app.use(express.static('downloadFiles'));
 //--------------------------------------
 //--------------------------------------
+await startAgenda();
 await startBrowser();
 //--------------------------------------
 //--------------------------------------

@@ -30,20 +30,20 @@ const fingerprintGenerator = new FingerprintGenerator({
 
 let cluster = null;
 
-export async function executeUrl(url, cookieOnly, fileNames = [], retryCounter = 0) {
+export async function executeUrl(url, cookieOnly, fileNames = [], saveToDb = false, retryCounter = 0) {
     try {
-        let res = await cluster.execute({url, cookieOnly, fileNames});
+        let res = await cluster.execute({url, cookieOnly, fileNames, saveToDb});
         if (!res && retryCounter < 1) {
             retryCounter++;
             await new Promise(resolve => setTimeout(resolve, 500));
-            return await executeUrl(url, cookieOnly, fileNames, retryCounter);
+            return await executeUrl(url, cookieOnly, fileNames, saveToDb, retryCounter);
         }
         return {res: res, retryCounter: retryCounter};
     } catch (error) {
         if (retryCounter < 1) {
             retryCounter++;
             await new Promise(resolve => setTimeout(resolve, 500));
-            return await executeUrl(url, cookieOnly, fileNames, retryCounter);
+            return await executeUrl(url, cookieOnly, fileNames, saveToDb, retryCounter);
         }
         error.url = url;
         saveError(error, true);
@@ -54,7 +54,7 @@ export async function executeUrl(url, cookieOnly, fileNames = [], retryCounter =
 export async function startBrowser() {
     try {
         const tabNumber = config.browserTabsCount;
-        const showManitor = (config.nodeEnv === 'dev' || config.crawlerMonitor === 'true');
+        const showMonitor = (config.nodeEnv === 'dev' || config.crawlerMonitor === 'true');
         const puppeteerOptions = {
             headless: true,
             args: [
@@ -71,10 +71,10 @@ export async function startBrowser() {
             retryLimit: 1,
             workerCreationDelay: 100,
             timeout: 60 * 60 * 1000, //60 min
-            monitor: showManitor,
+            monitor: showMonitor,
         });
 
-        await cluster.task(async ({page, data: {url, cookieOnly, fileNames}}) => {
+        await cluster.task(async ({page, data: {url, cookieOnly, fileNames, saveToDb}}) => {
             if (url.includes('blackHole.') || fileNames.length > 0) {
                 await page.browser()
                     .defaultBrowserContext()
@@ -87,7 +87,7 @@ export async function startBrowser() {
             await configRequestInterception(page);
             if (url.includes('blackHole.') || fileNames.length > 0) {
                 await page.setDefaultTimeout(60000);
-                return await uploadFileToBlackHole(page, fileNames);
+                return await uploadFileToBlackHole(page, fileNames, saveToDb);
             }
             await page.setDefaultTimeout(40000);
             return await handleSourceSpecificStuff(url, page, cookieOnly);

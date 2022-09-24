@@ -1,6 +1,7 @@
 import {executeUrl} from "./puppetterBrowser.js";
 import {loginAnimeList, handleAnimeListCaptcha} from "../sources/animelist.js";
 import {saveError} from "../saveError.js";
+import {newCrawlerCall} from "../files/files.js";
 
 let browserStatus = {
     digimovieTimeoutErrorTime: 0,
@@ -14,6 +15,7 @@ export async function getPageData(url, cookieOnly) {
         retryCount: 0,
         pageTitle: '',
     }
+    newCrawlerCall();
     let execResult = await executeUrl(url, cookieOnly);
     pageData.retryCount = execResult.retryCounter;
     if (execResult.res) {

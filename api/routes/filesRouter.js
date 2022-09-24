@@ -4,7 +4,7 @@ import {downloadFile, getFilesStatus, removeFile} from "../../files/files.js";
 
 const router = Router();
 
-router.get('/list', middlewares.checkPassword, async (req, res) => {
+router.get('/status', middlewares.checkPassword, async (req, res) => {
     let result = await getFilesStatus();
     if (result) {
         result.error = false;
@@ -29,7 +29,7 @@ router.get('/removeFile/:fileName', middlewares.checkPassword, async (req, res) 
     return res.json(result);
 });
 
-router.get('/downloadFile/:downloadLink', middlewares.checkPassword, async (req, res) => {
+router.get('/downloadAndUploadFile/:downloadLink', middlewares.checkPassword, async (req, res) => {
     let downloadLink = req.params.downloadLink;
     if (!downloadLink || typeof downloadLink !== 'string') {
         return res.json({
@@ -37,8 +37,7 @@ router.get('/downloadFile/:downloadLink', middlewares.checkPassword, async (req,
             message: 'Invalid parameter downloadLink :: String',
         });
     }
-    let alsoUploadFile = req.query.alsoUploadFile === 'true' || req.query.alsoUploadFile === true;
-    let result = await downloadFile(downloadLink, alsoUploadFile);
+    let result = await downloadFile(downloadLink, false);
     result.error = result.message !== 'ok';
     return res.json(result);
 });

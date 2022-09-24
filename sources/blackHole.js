@@ -1,10 +1,10 @@
 import config from "../config/index.js";
 import path from "path";
-import {getFilesStatus, getUploadAndDownloadStatus, uploadFileEnd, uploadFileStart} from "../files/files.js";
+import {getFilesStatus, getStatus, uploadFileEnd, uploadFileStart} from "../files/files.js";
 import {saveError} from "../saveError.js";
 
 
-export async function uploadFileToBlackHole(page, fileNames) {
+export async function uploadFileToBlackHole(page, fileNames, saveToDb) {
     let uploadedFilesData = [];
     try {
         let checkPossible = await checkUploadIsPossible(fileNames);
@@ -14,9 +14,9 @@ export async function uploadFileToBlackHole(page, fileNames) {
 
         await loginToBlackHole(page);
 
-        let uploadAndDownloadStatus = getUploadAndDownloadStatus();
+        let status = getStatus();
         for (let i = 0; i < fileNames.length; i++) {
-            while (uploadAndDownloadStatus.uploadCounter >= 1) {
+            while (status.uploadCounter >= 1) {
                 await new Promise(resolve => setTimeout(resolve, 60 * 1000)); //1 min
             }
 
@@ -24,7 +24,7 @@ export async function uploadFileToBlackHole(page, fileNames) {
             const inputUploadHandle = await page.$('input[id=file]');
             let fileToUpload = path.join('.', 'downloadFiles', fileNames[i]);
             await inputUploadHandle.uploadFile(fileToUpload);
-            let fileData = uploadFileStart(fileNames[i]);
+            let fileData = await uploadFileStart(fileNames[i], saveToDb);
 
             await page.waitForFunction(
                 text => document.querySelector(".media-content").innerText.includes(text),
@@ -39,7 +39,7 @@ export async function uploadFileToBlackHole(page, fileNames) {
             await copyLinkButton2[1].evaluate(b => b.click());
             let uploadLink = await page.evaluate(() => navigator.clipboard.readText());
 
-            await uploadFileEnd(fileNames[i], uploadLink);
+            await uploadFileEnd(fileNames[i], uploadLink, saveToDb);
             uploadedFilesData.push(fileData);
         }
 
