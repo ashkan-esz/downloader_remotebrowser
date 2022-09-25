@@ -11,6 +11,7 @@ import {saveError} from "../saveError.js";
 import axios from "axios";
 import {executeUrl} from "../browser/puppetterBrowser.js";
 import {getLinksDB, resetOutdatedFlagsDB, updateLinkDataDB} from "../db/torrentLinksCollection.js";
+import * as Sentry from "@sentry/node";
 
 const promisifiedFinished = promisify(stream.finished);
 
@@ -76,15 +77,22 @@ export async function startUploadJob() {
 
             let filesData = await getLinksDB();
             let shouldUploadFiles = [];
+            let noFileThatCanBeDownloaded = false;
             for (let i = 0; i < filesData.length; i++) {
                 let downloadResult = await downloadFile(filesData[i].downloadLink);
                 if (downloadResult.message === 'ok') {
                     shouldUploadFiles.push(downloadResult.fileData.fileName);
+                } else if (downloadResult.message.includes("Low disk space") && i === 0 && status.downloadCounter === 0) {
+                    noFileThatCanBeDownloaded = true;
                 }
             }
 
             if (shouldUploadFiles.length > 0) {
                 await uploadFiles(shouldUploadFiles, true);
+            }
+            if (noFileThatCanBeDownloaded) {
+                Sentry.captureMessage("Warning: all files are larger than empty space");
+                break;
             }
         }
 
