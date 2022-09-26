@@ -79,7 +79,7 @@ export async function startUploadJob() {
             let shouldUploadFiles = [];
             let noFileThatCanBeDownloaded = false;
             for (let i = 0; i < filesData.length; i++) {
-                let downloadResult = await downloadFile(filesData[i].downloadLink);
+                let downloadResult = await downloadFile(filesData[i].downloadLink, true, true);
                 if (downloadResult.message === 'ok') {
                     shouldUploadFiles.push(downloadResult.fileData.fileName);
                 } else if (downloadResult.message.includes("Low disk space") && i === 0 && status.downloadCounter === 0) {
@@ -249,9 +249,9 @@ export async function removeFile(fileName, newFileStatus = false) {
     }
 }
 
-export async function downloadFile(downloadLink, saveToDb) {
+export async function downloadFile(downloadLink, saveToDb, isUploadJob = false) {
     try {
-        if (status.uploadJobRunning) {
+        if (status.uploadJobRunning && !isUploadJob) {
             return {
                 message: 'Cannot download files when uploadJob is running',
                 fileData: null,
