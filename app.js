@@ -14,6 +14,7 @@ const app = express();
 //---------------Routes-----------------
 import headlessBrowser from "./api/routes/headlessBrowser.js";
 import filesRouter from "./api/routes/filesRouter.js";
+import youtubeRouter from "./api/routes/youtubeRouter.js";
 //--------------middleware--------------
 Sentry.init({
     dsn: config.sentryDns,
@@ -30,7 +31,6 @@ app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
 app.use(cors());
 app.use(compression());
-app.use(express.static('downloadFiles'));
 //--------------------------------------
 //--------------------------------------
 await startAgenda();
@@ -39,6 +39,9 @@ await startBrowser();
 //--------------------------------------
 app.use('/headlessBrowser', headlessBrowser);
 app.use('/files', filesRouter);
+app.use('/youtube', youtubeRouter);
+//--------------------------------------
+//--------------------------------------
 
 app.use(Sentry.Handlers.errorHandler({
     shouldHandleError(error) {

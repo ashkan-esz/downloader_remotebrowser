@@ -9,6 +9,7 @@ import {saveError} from "../saveError.js";
 import {FingerprintGenerator} from "fingerprint-generator";
 import {FingerprintInjector} from "fingerprint-injector";
 import {uploadFileToBlackHole} from "../sources/blackHole.js";
+import {getYoutubeDownloadLink} from "../sources/youtube.js";
 
 puppeteer.use(StealthPlugin());
 puppeteer.use(
@@ -29,21 +30,26 @@ const fingerprintGenerator = new FingerprintGenerator({
 });
 
 let cluster = null;
+let browserPid = 0;
 
-export async function executeUrl(url, cookieOnly, fileNames = [], saveToDb = false, retryCounter = 0) {
+export function getBrowserPid() {
+    return browserPid;
+}
+
+export async function executeUrl(url, cookieOnly, fileNames = [], saveToDb = false, execType = '', retryCounter = 0) {
     try {
-        let res = await cluster.execute({url, cookieOnly, fileNames, saveToDb});
+        let res = await cluster.execute({url, cookieOnly, fileNames, saveToDb, execType});
         if (!res && retryCounter < 1) {
             retryCounter++;
             await new Promise(resolve => setTimeout(resolve, 500));
-            return await executeUrl(url, cookieOnly, fileNames, saveToDb, retryCounter);
+            return await executeUrl(url, cookieOnly, fileNames, saveToDb, execType, retryCounter);
         }
         return {res: res, retryCounter: retryCounter};
     } catch (error) {
         if (retryCounter < 1) {
             retryCounter++;
             await new Promise(resolve => setTimeout(resolve, 500));
-            return await executeUrl(url, cookieOnly, fileNames, saveToDb, retryCounter);
+            return await executeUrl(url, cookieOnly, fileNames, saveToDb, execType, retryCounter);
         }
         error.url = url;
         saveError(error, true);
@@ -70,11 +76,13 @@ export async function startBrowser() {
             puppeteerOptions: puppeteerOptions,
             retryLimit: 1,
             workerCreationDelay: 100,
-            timeout: 60 * 60 * 1000, //60 min
+            timeout: 130 * 60 * 1000, //130 min
             monitor: showMonitor,
         });
 
-        await cluster.task(async ({page, data: {url, cookieOnly, fileNames, saveToDb}}) => {
+        await cluster.task(async ({page, data: {url, cookieOnly, fileNames, saveToDb, execType}}) => {
+            browserPid = page.browser().process().pid;
+
             if (url.includes('blackHole.') || fileNames.length > 0) {
                 await page.browser()
                     .defaultBrowserContext()
@@ -84,10 +92,13 @@ export async function startBrowser() {
             const fingerprintWithHeaders = fingerprintGenerator.getFingerprint();
             await fingerprintInjector.attachFingerprintToPuppeteer(page, fingerprintWithHeaders);
             await page.setViewport({width: 1280, height: 800});
-            await configRequestInterception(page);
+            await configRequestInterception(page, execType);
             if (url.includes('blackHole.') || fileNames.length > 0) {
                 await page.setDefaultTimeout(60000);
                 return await uploadFileToBlackHole(page, fileNames, saveToDb);
+            } else if (execType === 'downloadYoutube') {
+                await page.setDefaultTimeout(40000);
+                return await getYoutubeDownloadLink(page, url);
             }
             await page.setDefaultTimeout(40000);
             return await handleSourceSpecificStuff(url, page, cookieOnly);
@@ -97,10 +108,28 @@ export async function startBrowser() {
     }
 }
 
-async function configRequestInterception(page) {
+async function configRequestInterception(page, execType) {
     await page.setRequestInterception(true);
     page.on('request', (interceptedRequest) => {
         let url = interceptedRequest.url();
+
+        if (execType === 'downloadYoutube' && url.includes('.js')) {
+            if (
+                url.includes('chunk-') ||
+                url.includes('video.min') ||
+                url.includes('sfHelper') ||
+                url.includes('lang_selector') ||
+                url.includes('assetsSfMain') ||
+                url.includes('mainFormOutput') ||
+                url.includes('experimentLoader')
+            ) {
+                interceptedRequest.abort();
+            } else {
+                interceptedRequest.continue();
+            }
+            return;
+        }
+
         if (
             url.match(/\.(png|jpg|jpeg|webp|gif|svg|ico|woff|woff2|ttfwebp|json|mp3|mp3ds|mp4)(\?_=\d)?$/) ||
             url.match(/\.css(\?ver=((.{3,6})|\d{10}))?$/) ||

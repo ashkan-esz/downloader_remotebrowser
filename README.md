@@ -74,6 +74,10 @@ res = {
 
 <br/>
 
+- [GET /youtube/getDownloadLink?password=PASSWORD&youtubeUrl=String](api/routes/youtubeRouter.js)
+
+<br/>
+
 ## Future updates
 
 - [x]  Efficient and low memory usage web crawler.
