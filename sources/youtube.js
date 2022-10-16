@@ -19,8 +19,16 @@ export async function getYoutubeDownloadLink(page, url) {
             await button.click();
         }
 
-        await page.waitForSelector('.link-download');
+        await Promise.any([
+            page.waitForSelector('.result-failure', {visible: true}),
+            page.waitForSelector('.link-download'),
+        ]);
+
         let link = await page.$('.link-download');
+        if (!link) {
+            return await getYoutubeDownloadLink2(page, url);
+        }
+
         return {
             youtubeUrl: url,
             downloadUrl: await link.evaluate(el => el.href),
@@ -41,10 +49,35 @@ export async function getYoutubeDownloadLink2(page, url) {
 
         await page.goto(pageUrl, {waitUntil: "networkidle2"});
 
-        await page.waitForSelector('.tableVideo');
+        await Promise.any([
+            page.waitForSelector('#error-text', {visible: true}),
+            page.waitForSelector('.tableVideo'),
+        ]);
 
         let convertButtons = await page.$$("table[class=tableVideo] button");
-        await convertButtons[0].evaluate(b => b.click());
+        if (convertButtons.length === 0) {
+            return null;
+        }
+
+        let found720 = false;
+        for (let i = 0; i < convertButtons.length; i++) {
+            let parent_node = await convertButtons[i].getProperty('parentNode');
+            let prev = await parent_node.evaluateHandle(el => el.previousElementSibling);
+            let prev2 = await prev.evaluateHandle(el => el.previousElementSibling);
+            let text = await prev2.evaluate(el => el.textContent);
+
+            if (text.toLowerCase().includes('720p')) {
+                await convertButtons[i].evaluate(b => b.click());
+                found720 = true;
+                break;
+            }
+            if (text.toLowerCase().includes('480p') || text.toLowerCase().includes('360p')) {
+                break;
+            }
+        }
+        if (!found720) {
+            await convertButtons[0].evaluate(b => b.click());
+        }
 
         await page.waitForXPath("//a[contains(. , 'Download')]");
         let links = await page.$x("//a[contains(. , 'Download')]");

@@ -39,7 +39,7 @@ export function getBrowserPid() {
 export async function executeUrl(url, cookieOnly, fileNames = [], saveToDb = false, execType = '', retryCounter = 0) {
     try {
         let res = await cluster.execute({url, cookieOnly, fileNames, saveToDb, execType});
-        if (!res && retryCounter < 1) {
+        if (!res && retryCounter < 1 && execType !== 'downloadYoutube') {
             retryCounter++;
             await new Promise(resolve => setTimeout(resolve, 500));
             return await executeUrl(url, cookieOnly, fileNames, saveToDb, execType, retryCounter);
