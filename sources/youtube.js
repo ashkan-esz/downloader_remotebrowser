@@ -32,6 +32,7 @@ export async function getYoutubeDownloadLink(page, url) {
         return {
             youtubeUrl: url,
             downloadUrl: await link.evaluate(el => el.href),
+            cookies: await page.cookies(),
         };
     } catch (error) {
         saveError(error);
@@ -84,6 +85,7 @@ export async function getYoutubeDownloadLink2(page, url) {
         return {
             youtubeUrl: url,
             downloadUrl: await links[0].evaluate(el => el.href),
+            cookies: await page.cookies(),
         };
     } catch (error) {
         saveError(error);

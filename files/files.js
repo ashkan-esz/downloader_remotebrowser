@@ -7,9 +7,10 @@ import * as stream from 'stream';
 import {promisify} from 'util';
 import nou from 'node-os-utils';
 import checkDiskSpace from 'check-disk-space';
+import pidusage from 'pidusage';
 import {saveError} from "../saveError.js";
 import axios from "axios";
-import {executeUrl} from "../browser/puppetterBrowser.js";
+import {executeUrl, getBrowserPid} from "../browser/puppetterBrowser.js";
 import {getLinksDB, resetOutdatedFlagsDB, updateLinkDataDB} from "../db/torrentLinksCollection.js";
 import * as Sentry from "@sentry/node";
 
@@ -64,8 +65,8 @@ export async function startUploadJob() {
             }
         }
 
-        //each upload job active for less than 1 hour
-        while ((Date.now() - startTime) < 60 * 60 * 1000) {
+        //each upload job active for less than 2 hour
+        while ((Date.now() - startTime) < 120 * 60 * 1000) {
             while (status.lastTimeCrawlerUse && getDatesBetween(new Date(), status.lastTimeCrawlerUse).minutes < 5) {
                 status.uploadJobRunning = false;
                 await new Promise(resolve => setTimeout(resolve, 30 * 1000)); //30s
@@ -143,7 +144,7 @@ export async function getFilesStatus() {
             uploadJobRunning: status.uploadJobRunning,
             lastTimeCrawlerUse: status.lastTimeCrawlerUse,
             disStatus: getDiskStatus(filesTotalSize),
-            memoryStatus: getMemoryStatus(),
+            memoryStatus: await getMemoryStatus(),
             disStatus_os: {
                 diskPath: disStatus_os.diskPath,
                 total: disStatus_os.size / (1024 * 1024),
@@ -180,17 +181,22 @@ export function getDiskStatus(filesTotalSize) {
     });
 }
 
-export function getMemoryStatus() {
+export async function getMemoryStatus() {
     let memoryStatus = process.memoryUsage();
     Object.keys(memoryStatus).forEach(key => {
         memoryStatus[key] = memoryStatus[key] / (1024 * 1024)
     });
+    let puppeteerPid = getBrowserPid();
+    let puppeteerUsage = puppeteerPid ? await pidusage(puppeteerPid) : null;
+    let puppeteerUsage_memory = puppeteerUsage ? puppeteerUsage.memory / (1024 * 1024) : 0;
 
     return ({
         total: config.totalMemoryAmount,
-        used: memoryStatus.rss,
-        free: config.totalMemoryAmount - memoryStatus.rss,
+        used_node: memoryStatus.rss,
+        used_pupputeer: puppeteerUsage_memory,
+        free: config.totalMemoryAmount - (memoryStatus.rss + puppeteerUsage_memory),
         allData: memoryStatus,
+        puppeteerCpu: puppeteerUsage?.cpu || 0,
     });
 }
 
@@ -258,7 +264,7 @@ export async function downloadFile(downloadLink, saveToDb, isUploadJob = false) 
             };
         }
 
-        let memoryStatus = getMemoryStatus();
+        let memoryStatus = await getMemoryStatus();
         if (memoryStatus.free <= 50) {
             return {
                 fileData: null,
@@ -335,7 +341,7 @@ export async function downloadFile(downloadLink, saveToDb, isUploadJob = false) 
 }
 
 export async function uploadFiles(fileNames, saveToDb) {
-    return await executeUrl('', false, fileNames, saveToDb);
+    return await executeUrl('', false, fileNames, saveToDb, 'uploadFile');
 }
 
 //-------------------------------------------------

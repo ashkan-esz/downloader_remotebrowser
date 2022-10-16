@@ -21,7 +21,7 @@ export async function startAgenda() {
 
         await agenda.start();
         //for more info check https://crontab.guru
-        await agenda.every("0 */1 * * *", "start uploadJob", {}); //Every hour
+        await agenda.every("0 */2 * * *", "start uploadJob", {}); //Every two hour
     } catch (error) {
         saveError(error);
     }
