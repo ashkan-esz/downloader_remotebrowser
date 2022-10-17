@@ -424,6 +424,16 @@ export async function uploadFileEnd(fileName, uploadLink, saveToDb) {
     return fileData;
 }
 
+export async function removeFiles(fileNames) {
+    for (let i = 0; i < fileNames.length; i++) {
+        try {
+            await fs.promises.unlink(path.join('.', 'downloadFiles', fileNames[i]));
+        } catch (error) {
+            saveError(error);
+        }
+    }
+}
+
 //-------------------------------------------------
 //-------------------------------------------------
 

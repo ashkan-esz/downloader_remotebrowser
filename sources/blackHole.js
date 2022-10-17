@@ -1,6 +1,6 @@
 import config from "../config/index.js";
 import path from "path";
-import {getFilesStatus, getStatus, uploadFileEnd, uploadFileStart} from "../files/files.js";
+import {getFilesStatus, getStatus, removeFiles, uploadFileEnd, uploadFileStart} from "../files/files.js";
 import {saveError} from "../saveError.js";
 
 
@@ -26,11 +26,43 @@ export async function uploadFileToBlackHole(page, fileNames, saveToDb) {
             await inputUploadHandle.uploadFile(fileToUpload);
             let fileData = await uploadFileStart(fileNames[i], saveToDb);
 
-            await page.waitForFunction(
-                text => document.querySelector(".media-content").innerText.includes(text),
-                {timeout: (fileData.size / 5 + 1) * 60 * 1000}, //5MB per min
-                "Add your file to start uploading"
-            );
+            await new Promise(async (resolve, reject) => {
+                let intervalId
+                try {
+                    const uploadProgress = {
+                        time: 0,
+                        text: '',
+                    };
+
+                    intervalId = setInterval(async () => {
+                        let progressbar = await page.$('.progressbar');
+                        let prev = await progressbar.evaluateHandle(el => el.previousElementSibling);
+                        let text = await prev.evaluate(el => el.textContent);
+                        fileData.uploadProgress = text;
+
+                        if (Date.now() - uploadProgress.time >= 30 * 1000) {
+                            if (text === uploadProgress.text && uploadProgress.time && text.toLowerCase().includes('uploading')) {
+                                return reject("upload progress stopped");
+                            } else {
+                                uploadProgress.time = Date.now();
+                                uploadProgress.text = text;
+                            }
+                        }
+                    }, 3000);
+
+                    await page.waitForFunction(
+                        text => document.querySelector(".media-content").innerText.includes(text),
+                        {timeout: (Math.round(fileData.size / 2) + 1) * 60 * 1000}, //2MB per min
+                        "Add your file to start uploading"
+                    );
+
+                    clearInterval(intervalId);
+                    resolve("ok");
+                } catch (error2) {
+                    clearInterval(intervalId);
+                    reject(error2);
+                }
+            });
 
             await page.waitForSelector("#copyToClipboard");
             let copyLinkButton = await page.$("#copyToClipboard");
@@ -49,6 +81,7 @@ export async function uploadFileToBlackHole(page, fileNames, saveToDb) {
         };
     } catch (error) {
         saveError(error);
+        await removeFiles(fileNames);
         return {
             message: "Internal server error",
             uploadResults: uploadedFilesData,
