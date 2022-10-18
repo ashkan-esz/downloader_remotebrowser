@@ -41,7 +41,7 @@ To run this project, you will need to add the following environment variables to
 
 ## Upload Job
 
-**NOTE: Upload job run every 1 hour. check db collection ('torrentLinks') and download them first and then upload them
+**NOTE: Upload job run every 1 hour. check db collection ('links') and download them first and then upload them
 to blackHole system, save upload link to db.**
 
 ## API

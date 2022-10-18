@@ -4,7 +4,7 @@ import {saveError} from "../saveError.js";
 
 export async function getLinksDB() {
     try {
-        let collection = await getCollection("torrentLinks");
+        let collection = await getCollection("links");
         return collection.find({
                 isDownloading: false,
                 isUploading: false,
@@ -27,7 +27,7 @@ export async function getLinksDB() {
 
 export async function updateLinkDataDB(downloadLink, updateFields) {
     try {
-        let collection = await getCollection("torrentLinks");
+        let collection = await getCollection("links");
         await collection.updateOne({
             downloadLink: downloadLink,
         }, {
@@ -44,7 +44,7 @@ export async function resetOutdatedFlagsDB() {
     try {
         let hoursAgo = new Date();
         hoursAgo.setHours(hoursAgo.getHours() - 6);
-        let collection = await getCollection("torrentLinks");
+        let collection = await getCollection("links");
         await collection.updateMany({
             $or: [
                 {

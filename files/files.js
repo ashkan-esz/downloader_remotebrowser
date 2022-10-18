@@ -11,7 +11,7 @@ import pidusage from 'pidusage';
 import {saveError} from "../saveError.js";
 import axios from "axios";
 import {executeUrl, getBrowserPid} from "../browser/puppetterBrowser.js";
-import {getLinksDB, resetOutdatedFlagsDB, updateLinkDataDB} from "../db/torrentLinksCollection.js";
+import {getLinksDB, resetOutdatedFlagsDB, updateLinkDataDB} from "../db/LinksCollection.js";
 import * as Sentry from "@sentry/node";
 
 const promisifiedFinished = promisify(stream.finished);
@@ -411,9 +411,11 @@ export async function uploadFileEnd(fileName, uploadLink, saveToDb, onError = fa
     let fileData = status.uploadAndDownloadFiles.find(item => item.fileName === fileName);
     if (fileData) {
         fileData.endUpload = onError ? 0 : new Date();
-        fileData.isUploading = false;
+        if (fileData.isUploading) {
+            fileData.isUploading = false;
+            status.uploadCounter--;
+        }
         fileData.uploadLink = uploadLink;
-        status.uploadCounter--;
         await fs.promises.unlink(path.join('.', 'downloadFiles', fileName));
         status.uploadAndDownloadFiles = status.uploadAndDownloadFiles.filter(item => item.fileName !== fileName);
         if (saveToDb) {
