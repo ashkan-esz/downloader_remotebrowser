@@ -93,9 +93,12 @@ export async function startUploadJob() {
             if (shouldUploadFiles.length > 0) {
                 await uploadFiles(shouldUploadFiles, true);
             }
-            if (shouldUploadFiles.length === 0 || noFileThatCanBeDownloaded) {
+            if (noFileThatCanBeDownloaded) {
                 Sentry.captureMessage("Warning: all files are larger than empty space");
                 break;
+            }
+            if (shouldUploadFiles.length === 0) {
+                await new Promise(resolve => setTimeout(resolve, 2 * 60 * 1000)); //2min
             }
         }
 
