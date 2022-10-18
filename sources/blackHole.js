@@ -59,6 +59,7 @@ export async function uploadFileToBlackHole(page, fileNames, saveToDb) {
                     clearInterval(intervalId);
                     resolve("ok");
                 } catch (error2) {
+                    saveError(error2);
                     clearInterval(intervalId);
                     reject(error2);
                 }
