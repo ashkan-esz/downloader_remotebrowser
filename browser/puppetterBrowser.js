@@ -145,7 +145,7 @@ async function configRequestInterception(page, execType) {
                 /[.\/]((custom-elements-es5-adapter)|(webcomponents-sd)|(scheduler)|(www-i18n-constants))\.js$/) ||
             url.match(/\d\d\d\.js/) ||
             url.match(
-                /(query|swiper|range|core|ajax|slick|select2|flatpickr|lazyload|dox|sweetalert2|mouse|slider|vimeo)\.min\.js/) ||
+                /(query|swiper|range|core|ajax|slick|select2|flatpickr|lazyload|dox|sweetalert2|mouse|slider|vimeo|particles)\.min\.js/) ||
             url.match(
                 /((bootstrap\.bundle)|(jquery\.magnific-popup)|(jquery-migrate)|(emoji-release)|(rocket-loader))\.min\.js/) ||
             url.match(

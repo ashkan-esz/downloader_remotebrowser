@@ -54,8 +54,6 @@ export async function startUploadJob() {
             return;
         }
 
-        await resetOutdatedFlagsDB();
-        let startTime = Date.now();
         //remove leftover files
         let dir = await fs.promises.readdir(path.join('.', 'downloadFiles'));
         for (let i = 0; i < dir.length; i++) {
@@ -65,12 +63,16 @@ export async function startUploadJob() {
             }
         }
 
+        await resetOutdatedFlagsDB();
+        let startTime = Date.now();
+
         //each upload job active for less than 2 hour
         while ((Date.now() - startTime) < 120 * 60 * 1000) {
             while (status.lastTimeCrawlerUse && getDatesBetween(new Date(), status.lastTimeCrawlerUse).minutes < 5) {
                 status.uploadJobRunning = false;
                 await new Promise(resolve => setTimeout(resolve, 30 * 1000)); //30s
                 if ((Date.now() - startTime) >= 60 * 60 * 1000) {
+                    //after waiting for 60min to crawling stop
                     return;
                 }
             }

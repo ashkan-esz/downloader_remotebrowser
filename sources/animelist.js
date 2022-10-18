@@ -3,8 +3,8 @@ import {getCaptchaCode} from "../captchaSolver.js";
 import {saveError} from "../saveError.js";
 
 export async function loginAnimeList(page) {
-    let email = config.animelistEmail;
-    let password = config.animelistPassword;
+    let email = config.sources.animeList.username;
+    let password = config.sources.animeList.password;
     let loginButton = await page.$x("//a[contains(., 'ورود و ثبت نام')]");
     if (loginButton.length === 0) {
         return;

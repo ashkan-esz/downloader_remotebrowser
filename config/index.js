@@ -10,8 +10,6 @@ export default {
     printErrors: process.env.PRINT_ERRORS,
     crawlerMonitor: process.env.CRAWLER_MONITOR,
     browserTabsCount: Number(process.env.CRAWLER_BROWSER_TAB_COUNT) || 3,
-    animelistEmail: process.env.ANIMELIST_EMAIL,
-    animelistPassword: process.env.ANIMELIST_PASSWORD,
     captchaSolverEndpoint: process.env.CAPTCHA_SOLVER_ENDPOINT,
     databaseURL: process.env.DATABASE_URL,
     blackHole: {
@@ -22,4 +20,10 @@ export default {
     totalMemoryAmount: Number(process.env.TOTAL_MEMORY_AMOUNT || 512),
     totalDiskSpace: Number(process.env.TOTAL_DISK_SPACE || 500),
     defaultUsedDiskSpace: Number(process.env.DEFAULT_USED_DISK_SPACE || 0), //estimate value based on heroku
+    sources: {
+        animeList: {
+            username: process.env.ANIMELIST_USERNAME,
+            password: process.env.ANIMELIST_PASSWORD,
+        },
+    }
 }
