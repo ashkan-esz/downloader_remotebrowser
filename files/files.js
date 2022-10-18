@@ -91,7 +91,7 @@ export async function startUploadJob() {
             if (shouldUploadFiles.length > 0) {
                 await uploadFiles(shouldUploadFiles, true);
             }
-            if (noFileThatCanBeDownloaded) {
+            if (shouldUploadFiles.length === 0 || noFileThatCanBeDownloaded) {
                 Sentry.captureMessage("Warning: all files are larger than empty space");
                 break;
             }
@@ -120,6 +120,7 @@ export async function getFilesStatus() {
         let memoryStatus_os = await nou.mem.info();
 
         let result = {
+            now: new Date(),
             files: dir.map((fileName, index) => {
                 let temp = status.uploadAndDownloadFiles.find(item => item.fileName === fileName);
                 if (temp) {
@@ -404,10 +405,10 @@ export async function uploadFileStart(fileName, saveToDb) {
     return fileData;
 }
 
-export async function uploadFileEnd(fileName, uploadLink, saveToDb) {
+export async function uploadFileEnd(fileName, uploadLink, saveToDb, onError = false) {
     let fileData = status.uploadAndDownloadFiles.find(item => item.fileName === fileName);
     if (fileData) {
-        fileData.endUpload = new Date();
+        fileData.endUpload = onError ? 0 : new Date();
         fileData.isUploading = false;
         fileData.uploadLink = uploadLink;
         status.uploadCounter--;

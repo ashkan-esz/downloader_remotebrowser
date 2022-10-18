@@ -49,11 +49,11 @@ export async function resetOutdatedFlagsDB() {
             $or: [
                 {
                     isDownloading: true,
-                    startDownload: {lte: hoursAgo},
+                    startDownload: {$lte: hoursAgo},
                 },
                 {
                     isUploading: true,
-                    startUpload: {lte: hoursAgo},
+                    startUpload: {$lte: hoursAgo},
                 },
             ],
         }, {

@@ -1,6 +1,6 @@
 import config from "../config/index.js";
 import path from "path";
-import {getFilesStatus, getStatus, removeFiles, uploadFileEnd, uploadFileStart} from "../files/files.js";
+import {getFilesStatus, getStatus, uploadFileEnd, uploadFileStart} from "../files/files.js";
 import {saveError} from "../saveError.js";
 
 
@@ -40,7 +40,7 @@ export async function uploadFileToBlackHole(page, fileNames, saveToDb) {
                         let text = await prev.evaluate(el => el.textContent);
                         fileData.uploadProgress = text;
 
-                        if (Date.now() - uploadProgress.time >= 30 * 1000) {
+                        if (Date.now() - uploadProgress.time >= 2 * 60 * 1000) {
                             if (text === uploadProgress.text && uploadProgress.time && text.toLowerCase().includes('uploading')) {
                                 return reject("upload progress stopped");
                             } else {
@@ -52,7 +52,7 @@ export async function uploadFileToBlackHole(page, fileNames, saveToDb) {
 
                     await page.waitForFunction(
                         text => document.querySelector(".media-content").innerText.includes(text),
-                        {timeout: (Math.round(fileData.size / 2) + 1) * 60 * 1000}, //2MB per min
+                        {timeout: (fileData.size + 1) * 60 * 1000}, //1MB per min
                         "Add your file to start uploading"
                     );
 
@@ -81,7 +81,9 @@ export async function uploadFileToBlackHole(page, fileNames, saveToDb) {
         };
     } catch (error) {
         saveError(error);
-        await removeFiles(fileNames);
+        for (let i = 0; i < fileNames.length; i++) {
+            await uploadFileEnd(fileNames[i], '', saveToDb, true);
+        }
         return {
             message: "Internal server error",
             uploadResults: uploadedFilesData,
