@@ -98,7 +98,8 @@ export async function startUploadJob() {
                 break;
             }
             if (shouldUploadFiles.length === 0) {
-                await new Promise(resolve => setTimeout(resolve, 2 * 60 * 1000)); //2min
+                status.uploadJobRunning = false;
+                await new Promise(resolve => setTimeout(resolve, 5 * 60 * 1000)); //5min
             }
         }
 

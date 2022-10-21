@@ -58,10 +58,7 @@ async function loadPage(url, isAnimelist, page) {
             await page.goto(url, {waitUntil: "domcontentloaded"});
         } else if (url.includes('avamovie')) {
             await page.goto(url, {waitUntil: "networkidle0"});
-            let pageTitle = await page.title();
-            if (pageTitle.toLowerCase().includes('security check')) {
-                await page.waitForNavigation({timeout: 20000});
-            }
+            await page.waitForSelector('.siteHeader', {timeout: 20000});
         } else {
             await page.goto(url);
         }

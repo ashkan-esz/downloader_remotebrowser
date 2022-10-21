@@ -100,7 +100,7 @@ export async function startBrowser() {
                 await page.setDefaultTimeout(40000);
                 return await getYoutubeDownloadLink(page, url);
             }
-            await page.setDefaultTimeout(40000);
+            await page.setDefaultTimeout(30000);
             return await handleSourceSpecificStuff(url, page, cookieOnly);
         });
     } catch (error) {
