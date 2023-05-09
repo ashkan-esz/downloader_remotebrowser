@@ -62,7 +62,7 @@ export async function startBrowser() {
         const tabNumber = config.browserTabsCount;
         const showMonitor = (config.nodeEnv === 'dev' || config.crawlerMonitor === 'true');
         const puppeteerOptions = {
-            headless: true,
+            headless: "new",
             args: [
                 "--no-sandbox",
                 "--single-process",
@@ -98,7 +98,7 @@ export async function startBrowser() {
                 return await uploadFileToBlackHole(page, fileNames, saveToDb);
             } else if (execType === 'downloadYoutube') {
                 await page.setDefaultTimeout(40000);
-                return await getYoutubeDownloadLink(page, url);
+                return await getYoutubeDownloadLink(page, url, retryCounter);
             }
             await page.setDefaultTimeout(30000);
             return await handleSourceSpecificStuff(url, page, cookieOnly, retryCounter);
