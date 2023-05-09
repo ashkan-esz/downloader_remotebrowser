@@ -56,7 +56,8 @@ async function loadPage(url, page, retryCounter) {
     } catch (error) {
         if (error.message && error.message.match(/timeout .+ exceeded/i)) {
             if (retryCounter === 0) {
-                await saveCrawlerWarning(`RemoteBrowser error on (page: ${url}), (ErrorMessage: ${error.message}), (serverName: ${config.serverName})`);
+                const simpleUrl = url.replace('https://','').split('/')[0];
+                await saveCrawlerWarning(`RemoteBrowser error on (page: ${simpleUrl}), (ErrorMessage: ${error.message}), (serverName: ${config.serverName})`);
             }
         } else {
             error.url = url;
@@ -81,7 +82,8 @@ async function loadPage(url, page, retryCounter) {
     } catch (error) {
         if (error.message && error.message.match(/((timeout)|(Waiting failed:)) .+ exceeded/i)) {
             if (retryCounter === 0) {
-                await saveCrawlerWarning(`RemoteBrowser error on (page: ${url}), (ErrorMessage: ${error.message}), (serverName: ${config.serverName})`);
+                const simpleUrl = url.replace('https://','').split('/')[0];
+                await saveCrawlerWarning(`RemoteBrowser error on (page: ${simpleUrl}), (ErrorMessage: ${error.message}), (serverName: ${config.serverName})`);
             }
         } else if (error.message === 'All promises were rejected') {
             if (Date.now() - browserStatus.digimovieTimeoutErrorTime > 10 * 60 * 1000) {  //10min
