@@ -1,6 +1,8 @@
+import config from "../config/index.js";
+import {saveCrawlerWarning} from "../db/serverAnalysisDbMethods.js";
 import {saveError} from "../saveError.js";
 
-export async function getYoutubeDownloadLink(page, url) {
+export async function getYoutubeDownloadLink(page, url, retryCounter) {
     //https://en.savefrom.net
     try {
         if (url.includes('/embed/')) {
@@ -26,7 +28,8 @@ export async function getYoutubeDownloadLink(page, url) {
 
         let link = await page.$('.link-download');
         if (!link) {
-            return await getYoutubeDownloadLink2(page, url);
+            retryCounter++;
+            return await getYoutubeDownloadLink2(page, url, retryCounter);
         }
 
         return {
@@ -35,12 +38,20 @@ export async function getYoutubeDownloadLink(page, url) {
             cookies: await page.cookies(),
         };
     } catch (error) {
-        saveError(error);
-        return await getYoutubeDownloadLink2(page, url);
+        if (error.message && error.message.match(/((timeout)|(Waiting failed:)|(Waiting for selector)) .+ exceeded/i)) {
+            if (retryCounter === 0) {
+                const simpleUrl = url.replace('https://', '').split('/')[0];
+                await saveCrawlerWarning(`RemoteBrowser error on (page: ${simpleUrl}), (ErrorMessage: ${error.message}), (Method: 1), (serverName: ${config.serverName})`);
+            }
+        } else {
+            saveError(error);
+        }
+        retryCounter++;
+        return await getYoutubeDownloadLink2(page, url, retryCounter);
     }
 }
 
-export async function getYoutubeDownloadLink2(page, url) {
+export async function getYoutubeDownloadLink2(page, url, retryCounter) {
     //https://en.y2mate.is
     try {
         if (url.includes('/embed/')) {
@@ -88,7 +99,14 @@ export async function getYoutubeDownloadLink2(page, url) {
             cookies: await page.cookies(),
         };
     } catch (error) {
-        saveError(error);
+        if (error.message && error.message.match(/((timeout)|(Waiting failed:)|(Waiting for selector)) .+ exceeded/i)) {
+            if (retryCounter === 0) {
+                const simpleUrl = url.replace('https://', '').split('/')[0];
+                await saveCrawlerWarning(`RemoteBrowser error on (page: ${simpleUrl}), (ErrorMessage: ${error.message}), (Method: 2), (serverName: ${config.serverName})`);
+            }
+        } else {
+            saveError(error);
+        }
         return null;
     }
 }

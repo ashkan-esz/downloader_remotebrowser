@@ -80,7 +80,7 @@ async function loadPage(url, page, retryCounter) {
         }
         return true;
     } catch (error) {
-        if (error.message && error.message.match(/((timeout)|(Waiting failed:)) .+ exceeded/i)) {
+        if (error.message && error.message.match(/((timeout)|(Waiting failed:)|(Waiting for selector)) .+ exceeded/i)) {
             if (retryCounter === 0) {
                 const simpleUrl = url.replace('https://','').split('/')[0];
                 await saveCrawlerWarning(`RemoteBrowser error on (page: ${simpleUrl}), (ErrorMessage: ${error.message}), (serverName: ${config.serverName})`);
