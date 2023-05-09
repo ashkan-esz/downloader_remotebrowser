@@ -1,5 +1,4 @@
 import {executeUrl} from "./puppetterBrowser.js";
-import {loginAnimeList, handleAnimeListCaptcha} from "../sources/animelist.js";
 import {saveError} from "../saveError.js";
 import {newCrawlerCall} from "../files/files.js";
 
@@ -25,17 +24,9 @@ export async function getPageData(url, cookieOnly) {
 }
 
 export async function handleSourceSpecificStuff(url, page, cookieOnly) {
-    let isAnimeList = url.match(/anime-?list/i);
-    let pageLoaded = await loadPage(url, isAnimeList, page);
+    let pageLoaded = await loadPage(url, page);
     if (!pageLoaded) {
         return null;
-    }
-
-    if (isAnimeList && url.includes('/anime/')) {
-        let captchaResult = await handleAnimeListCaptcha(page);
-        if (!captchaResult) {
-            return null;
-        }
     }
 
     return {
@@ -46,12 +37,10 @@ export async function handleSourceSpecificStuff(url, page, cookieOnly) {
     };
 }
 
-async function loadPage(url, isAnimelist, page) {
+async function loadPage(url, page) {
+    //goto page url
     try {
-        if (isAnimelist) {
-            await page.goto(url, {waitUntil: "domcontentloaded"});
-            await loginAnimeList(page);
-        } else if (url.includes('digimovie')) {
+        if (url.includes('digimovie')) {
             if (!url.match(/\/$/)) {
                 url = url + '/';
             }
@@ -68,6 +57,7 @@ async function loadPage(url, isAnimelist, page) {
         return false;
     }
 
+    //wait for page load complete
     try {
         if (url.includes('digimovie')) {
             await page.waitForSelector('.container', {timeout: 10000});
