@@ -1,6 +1,8 @@
+import config from "../config/index.js";
 import {executeUrl} from "./puppetterBrowser.js";
 import {saveError} from "../saveError.js";
 import {newCrawlerCall} from "../files/files.js";
+import {saveCrawlerWarning} from "../db/serverAnalysisDbMethods.js";
 
 let browserStatus = {
     digimovieTimeoutErrorTime: 0,
@@ -23,8 +25,8 @@ export async function getPageData(url, cookieOnly) {
     return pageData;
 }
 
-export async function handleSourceSpecificStuff(url, page, cookieOnly) {
-    let pageLoaded = await loadPage(url, page);
+export async function handleSourceSpecificStuff(url, page, cookieOnly, retryCounter) {
+    let pageLoaded = await loadPage(url, page, retryCounter);
     if (!pageLoaded) {
         return null;
     }
@@ -37,7 +39,7 @@ export async function handleSourceSpecificStuff(url, page, cookieOnly) {
     };
 }
 
-async function loadPage(url, page) {
+async function loadPage(url, page, retryCounter) {
     //goto page url
     try {
         if (url.includes('digimovie')) {
@@ -52,8 +54,14 @@ async function loadPage(url, page) {
             await page.goto(url);
         }
     } catch (error) {
-        error.url = url;
-        saveError(error, true);
+        if (error.message && error.message.match(/timeout .+ exceeded/i)) {
+            if (retryCounter === 0) {
+                await saveCrawlerWarning(`RemoteBrowser error on (page: ${url}), (ErrorMessage: ${error.message}), (serverName: ${config.serverName})`);
+            }
+        } else {
+            error.url = url;
+            saveError(error, true);
+        }
         return false;
     }
 
@@ -71,7 +79,11 @@ async function loadPage(url, page) {
         }
         return true;
     } catch (error) {
-        if (error.message && (error.message.match(/timeout .+ exceeded/) || error.message === 'All promises were rejected')) {
+        if (error.message && error.message.match(/((timeout)|(Waiting failed:)) .+ exceeded/i)) {
+            if (retryCounter === 0) {
+                await saveCrawlerWarning(`RemoteBrowser error on (page: ${url}), (ErrorMessage: ${error.message}), (serverName: ${config.serverName})`);
+            }
+        } else if (error.message === 'All promises were rejected') {
             if (Date.now() - browserStatus.digimovieTimeoutErrorTime > 10 * 60 * 1000) {  //10min
                 browserStatus.digimovieTimeoutErrorTime = Date.now();
                 error.url = url;

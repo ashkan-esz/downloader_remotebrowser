@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import {v4 as uuidv4} from "uuid";
 
 dotenv.config({path: './.env'});
 
@@ -10,6 +11,7 @@ export default {
     printErrors: process.env.PRINT_ERRORS,
     crawlerMonitor: process.env.CRAWLER_MONITOR,
     browserTabsCount: Number(process.env.CRAWLER_BROWSER_TAB_COUNT) || 3,
+    serverName: process.env.SERVER_NAME || uuidv4(),
     captchaSolverEndpoint: process.env.CAPTCHA_SOLVER_ENDPOINT,
     databaseURL: process.env.DATABASE_URL,
     blackHole: {

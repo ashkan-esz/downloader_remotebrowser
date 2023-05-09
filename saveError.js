@@ -6,7 +6,7 @@ export async function saveError(error, moreInfo = false) {
         if (!error.url && error.config?.url) {
             error.url = error.config.url;
         }
-        if (moreInfo || error.isAxiosError || error.name === "AxiosError") {
+        if (moreInfo || error.isAxiosError || error.isAxiosError2 || error.name === "AxiosError") {
             Sentry.withScope(function (scope) {
                 scope.setExtra('ErrorData', error);
                 scope.setTag("ErrorData", "ErrorData");

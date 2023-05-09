@@ -38,7 +38,7 @@ export function getBrowserPid() {
 
 export async function executeUrl(url, cookieOnly, fileNames = [], saveToDb = false, execType = '', retryCounter = 0) {
     try {
-        let res = await cluster.execute({url, cookieOnly, fileNames, saveToDb, execType});
+        let res = await cluster.execute({url, cookieOnly, fileNames, saveToDb, execType, retryCounter});
         if (!res && retryCounter < 1 && execType !== 'downloadYoutube') {
             retryCounter++;
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -80,7 +80,7 @@ export async function startBrowser() {
             monitor: showMonitor,
         });
 
-        await cluster.task(async ({page, data: {url, cookieOnly, fileNames, saveToDb, execType}}) => {
+        await cluster.task(async ({page, data: {url, cookieOnly, fileNames, saveToDb, execType, retryCounter}}) => {
             browserPid = page.browser().process().pid;
 
             if (url.includes('blackHole.') || fileNames.length > 0) {
@@ -101,7 +101,7 @@ export async function startBrowser() {
                 return await getYoutubeDownloadLink(page, url);
             }
             await page.setDefaultTimeout(30000);
-            return await handleSourceSpecificStuff(url, page, cookieOnly);
+            return await handleSourceSpecificStuff(url, page, cookieOnly, retryCounter);
         });
     } catch (error) {
         saveError(error);
