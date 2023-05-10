@@ -1,18 +1,23 @@
 import config from "../config/index.js";
 import {saveCrawlerWarning} from "../db/serverAnalysisDbMethods.js";
 import {saveError} from "../saveError.js";
+import {changePageLinkStateFromCrawlerStatus, removePageLinkToCrawlerStatus} from "../serverStatus.js";
 
 export async function getYoutubeDownloadLink(page, url, retryCounter) {
     //https://en.savefrom.net
+    const originalUrl = url;
     try {
         if (url.includes('/embed/')) {
             url = url.split('?')[0].replace('embed/', 'watch?v=');
         }
         let pageUrl = url.replace('youtube.com', 'ssyoutube.com');
 
+        changePageLinkStateFromCrawlerStatus(originalUrl, 'youtubeDownload', 'goToPage', retryCounter);
         await page.goto(pageUrl, {waitUntil: "networkidle2"});
 
+        changePageLinkStateFromCrawlerStatus(originalUrl, 'youtubeDownload', 'waitForSelector', retryCounter);
         await page.waitForSelector('#sf_url');
+        changePageLinkStateFromCrawlerStatus(originalUrl, 'youtubeDownload', 'waitForInputForm', retryCounter);
         let inputForm = await page.$('#sf_form');
         let inputFormValue = await inputForm.evaluate(el => el.textContent);
         if (!inputFormValue.includes(url)) {
@@ -21,6 +26,7 @@ export async function getYoutubeDownloadLink(page, url, retryCounter) {
             await button.click();
         }
 
+        changePageLinkStateFromCrawlerStatus(originalUrl, 'youtubeDownload', 'waitForResult', retryCounter);
         await Promise.any([
             page.waitForSelector('.result-failure', {visible: true}),
             page.waitForSelector('.link-download'),
@@ -29,9 +35,10 @@ export async function getYoutubeDownloadLink(page, url, retryCounter) {
         let link = await page.$('.link-download');
         if (!link) {
             retryCounter++;
-            return await getYoutubeDownloadLink2(page, url, retryCounter);
+            return await getYoutubeDownloadLink2(page, url, originalUrl, retryCounter);
         }
 
+        removePageLinkToCrawlerStatus(originalUrl);
         return {
             youtubeUrl: url,
             downloadUrl: await link.evaluate(el => el.href),
@@ -47,11 +54,11 @@ export async function getYoutubeDownloadLink(page, url, retryCounter) {
             saveError(error);
         }
         retryCounter++;
-        return await getYoutubeDownloadLink2(page, url, retryCounter);
+        return await getYoutubeDownloadLink2(page, url, originalUrl, retryCounter);
     }
 }
 
-export async function getYoutubeDownloadLink2(page, url, retryCounter) {
+export async function getYoutubeDownloadLink2(page, url, originalUrl, retryCounter) {
     //https://en.y2mate.is
     try {
         if (url.includes('/embed/')) {
@@ -59,15 +66,19 @@ export async function getYoutubeDownloadLink2(page, url, retryCounter) {
         }
         let pageUrl = url.replace('youtube.com', 'youtubepi.com');
 
+        changePageLinkStateFromCrawlerStatus(originalUrl, 'youtubeDownload', 'goToPage (2)', retryCounter);
         await page.goto(pageUrl, {waitUntil: "networkidle2"});
 
+        changePageLinkStateFromCrawlerStatus(originalUrl, 'youtubeDownload', 'waitForPageLoad (2)', retryCounter);
         await Promise.any([
             page.waitForSelector('#error-text', {visible: true}),
             page.waitForSelector('.tableVideo'),
         ]);
 
+        changePageLinkStateFromCrawlerStatus(originalUrl, 'youtubeDownload', 'waitForResult (2)', retryCounter);
         let convertButtons = await page.$$("table[class=tableVideo] button");
         if (convertButtons.length === 0) {
+            removePageLinkToCrawlerStatus(originalUrl);
             return null;
         }
 
@@ -91,6 +102,7 @@ export async function getYoutubeDownloadLink2(page, url, retryCounter) {
             await convertButtons[0].evaluate(b => b.click());
         }
 
+        removePageLinkToCrawlerStatus(originalUrl);
         await page.waitForXPath("//a[contains(. , 'Download')]");
         let links = await page.$x("//a[contains(. , 'Download')]");
         return {
@@ -99,6 +111,7 @@ export async function getYoutubeDownloadLink2(page, url, retryCounter) {
             cookies: await page.cookies(),
         };
     } catch (error) {
+        removePageLinkToCrawlerStatus(originalUrl);
         if (error.message && error.message.match(/((timeout)|(Waiting failed:)|(Waiting for selector)) .+ exceeded/i)) {
             if (retryCounter === 0) {
                 const simpleUrl = url.replace('https://', '').split('/')[0];

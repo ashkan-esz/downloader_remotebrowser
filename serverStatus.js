@@ -15,15 +15,17 @@ const status = {
     downloadCounter: 0,
     uploadCounter: 0,
     uploadJobRunning: false,
+    blackHoleUpload: {
+        time: 0,
+        message: '',
+        state: '',
+    },
     lastTimeCrawlerUse: 0,
+    pageLinks: [],
 }
 
 export function getServerStatusFlags() {
     return status;
-}
-
-export function newCrawlerCallStart() {
-    status.lastTimeCrawlerUse = new Date();
 }
 
 export function isCrawlerActive() {
@@ -33,9 +35,52 @@ export function isCrawlerActive() {
 //-----------------------------------
 //-----------------------------------
 
-export async function getServerResourcesStatus() {
-    //todo : show crawling links and data
+export function updateBlackHoleUploadMessage(message, time, state) {
+    status.blackHoleUpload.message = message;
+    status.blackHoleUpload.time = time;
+    status.blackHoleUpload.state = state;
+}
 
+//-----------------------------------
+//-----------------------------------
+
+export function addPageLinkToCrawlerStatus(pageLink, pageNumber) {
+    status.lastTimeCrawlerUse = new Date();
+
+    pageLink = getDecodedLink(pageLink);
+    if (!status.pageLinks.find(item => item.url === pageLink)) {
+        status.pageLinks.push({
+            url: pageLink,
+            pageNumber: pageNumber,
+            time: new Date(),
+            state: 'start',
+            stateTime: new Date(),
+            type: '',
+            retryCounter: 0,
+        });
+    }
+}
+
+export function changePageLinkStateFromCrawlerStatus(pageLink, type, state, retryCounter) {
+    pageLink = getDecodedLink(pageLink);
+    let data = status.pageLinks.find(item => item.url === pageLink);
+    if (data) {
+        data.state = state;
+        data.type = type;
+        data.stateTime = new Date();
+        data.retryCounter = retryCounter;
+    }
+}
+
+export function removePageLinkToCrawlerStatus(pageLink) {
+    pageLink = getDecodedLink(pageLink);
+    status.pageLinks = status.pageLinks.filter(item => item.url !== pageLink);
+}
+
+//-----------------------------------
+//-----------------------------------
+
+export async function getServerResourcesStatus() {
     let {filesTotalSize, files, dir} = await getDownloadFilesTotalSize();
 
     try {
@@ -49,11 +94,21 @@ export async function getServerResourcesStatus() {
                 platform: process.platform,
                 arch: process.arch,
             },
-
-
-            // crawlerStatus: getCrawlerStatusObj(),
-            lastTimeCrawlerUse: status.lastTimeCrawlerUse,
-
+            configs: {
+                name: config.serverName,
+                browserTabsCount: config.browserTabsCount,
+                blackHole: {
+                    fileSizeLimit: config.blackHole.fileSizeLimit,
+                },
+                disableUploadJob: config.disableUploadJob,
+            },
+            crawlerStatus: {
+                lastTimeCrawlerUse: status.lastTimeCrawlerUse,
+                pageLinks: status.pageLinks,
+            },
+            cpu: await getCpuStatus(),
+            memoryStatus: await getMemoryStatus(),
+            diskStatus: await getDiskStatus(filesTotalSize),
             filesStatus: {
                 files: dir.map((fileName, index) => {
                     let temp = status.uploadAndDownloadFiles.find(item => item.fileName === fileName);
@@ -77,10 +132,8 @@ export async function getServerResourcesStatus() {
                 downloadCount: status.downloadCounter,
                 uploadCount: status.uploadCounter,
                 uploadJobRunning: status.uploadJobRunning,
+                blackHoleUpload: status.blackHoleUpload,
             },
-            cpu: await getCpuStatus(),
-            memoryStatus: await getMemoryStatus(),
-            diskStatus: await getDiskStatus(filesTotalSize),
         });
     } catch (error) {
         saveError(error);
@@ -116,6 +169,7 @@ export async function getFilesStatus() {
             downloadCount: status.downloadCounter,
             uploadCount: status.uploadCounter,
             uploadJobRunning: status.uploadJobRunning,
+            blackHoleUpload: status.blackHoleUpload,
         });
     } catch (error) {
         saveError(error);
@@ -193,4 +247,16 @@ export async function getDiskStatus(filesTotalSize) {
             free: diskStatus_os.free / (1024 * 1024),
         }
     });
+}
+
+//-------------------------------------------
+//-------------------------------------------
+
+export function getDecodedLink(link) {
+    let decodedLink = link;
+    try {
+        decodedLink = decodeURIComponent(decodedLink);
+    } catch (error) {
+    }
+    return decodedLink;
 }

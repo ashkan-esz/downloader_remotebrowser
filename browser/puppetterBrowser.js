@@ -10,6 +10,7 @@ import {FingerprintGenerator} from "fingerprint-generator";
 import {FingerprintInjector} from "fingerprint-injector";
 import {uploadFileToBlackHole} from "../sources/blackHole.js";
 import {getYoutubeDownloadLink} from "../sources/youtube.js";
+import {changePageLinkStateFromCrawlerStatus} from "../serverStatus.js";
 
 puppeteer.use(StealthPlugin());
 puppeteer.use(
@@ -82,8 +83,9 @@ export async function startBrowser() {
 
         await cluster.task(async ({page, data: {url, cookieOnly, fileNames, saveToDb, execType, retryCounter}}) => {
             browserPid = page.browser().process().pid;
-
+            changePageLinkStateFromCrawlerStatus(url, '', 'start cluster task', retryCounter);
             if (url.includes('blackHole.') || fileNames.length > 0) {
+                changePageLinkStateFromCrawlerStatus(url, 'blackHoleUpload', 'start cluster task', retryCounter);
                 await page.browser()
                     .defaultBrowserContext()
                     .overridePermissions('https://blackhole.run', ['clipboard-read', 'clipboard-write']);
@@ -92,10 +94,11 @@ export async function startBrowser() {
             const fingerprintWithHeaders = fingerprintGenerator.getFingerprint();
             await fingerprintInjector.attachFingerprintToPuppeteer(page, fingerprintWithHeaders);
             await page.setViewport({width: 1280, height: 800});
+            changePageLinkStateFromCrawlerStatus(url, '', 'configRequestInterception', retryCounter);
             await configRequestInterception(page, execType);
             if (url.includes('blackHole.') || fileNames.length > 0) {
                 await page.setDefaultTimeout(60000);
-                return await uploadFileToBlackHole(page, fileNames, saveToDb);
+                return await uploadFileToBlackHole(page, fileNames, saveToDb, retryCounter);
             } else if (execType === 'downloadYoutube') {
                 await page.setDefaultTimeout(40000);
                 return await getYoutubeDownloadLink(page, url, retryCounter);

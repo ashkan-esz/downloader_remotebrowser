@@ -2,7 +2,11 @@ import config from "../config/index.js";
 import {executeUrl} from "./puppetterBrowser.js";
 import {saveError} from "../saveError.js";
 import {saveCrawlerWarning} from "../db/serverAnalysisDbMethods.js";
-import {newCrawlerCallStart} from "../serverStatus.js";
+import {
+    addPageLinkToCrawlerStatus,
+    changePageLinkStateFromCrawlerStatus,
+    removePageLinkToCrawlerStatus
+} from "../serverStatus.js";
 
 let browserStatus = {
     digimovieTimeoutErrorTime: 0,
@@ -16,8 +20,9 @@ export async function getPageData(url, cookieOnly) {
         retryCount: 0,
         pageTitle: '',
     }
-    newCrawlerCallStart();
+    addPageLinkToCrawlerStatus(url);
     let execResult = await executeUrl(url, cookieOnly);
+    removePageLinkToCrawlerStatus(url);
     pageData.retryCount = execResult.retryCounter;
     if (execResult.res) {
         pageData = {...pageData, ...execResult.res};
@@ -41,7 +46,9 @@ export async function handleSourceSpecificStuff(url, page, cookieOnly, retryCoun
 
 async function loadPage(url, page, retryCounter) {
     //goto page url
+    const originalUrl = url;
     try {
+        changePageLinkStateFromCrawlerStatus(originalUrl, 'crawler', 'waitForPageLoad', retryCounter);
         if (url.includes('digimovie')) {
             if (!url.match(/\/$/)) {
                 url = url + '/';
@@ -68,6 +75,7 @@ async function loadPage(url, page, retryCounter) {
 
     //wait for page load complete
     try {
+        changePageLinkStateFromCrawlerStatus(originalUrl, 'crawler', 'waitForPageLoadCompletely', retryCounter);
         if (url.includes('digimovie')) {
             await page.waitForSelector('.container', {timeout: 10000});
             if (url.match(/\/series?$|\/page\//g) || url.replace('https://', '').split('/').length === 1) {

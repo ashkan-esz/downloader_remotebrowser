@@ -1,30 +1,41 @@
 import config from "../config/index.js";
 import path from "path";
 import {uploadFileEnd, uploadFileStart} from "../files/files.js";
-import {getFilesStatus, getMemoryStatus, getServerStatusFlags} from "../serverStatus.js";
+import {
+    changePageLinkStateFromCrawlerStatus,
+    getFilesStatus,
+    getMemoryStatus,
+    getServerStatusFlags, removePageLinkToCrawlerStatus,
+    updateBlackHoleUploadMessage
+} from "../serverStatus.js";
 import {saveError} from "../saveError.js";
 
 
-export async function uploadFileToBlackHole(page, fileNames, saveToDb) {
+export async function uploadFileToBlackHole(page, fileNames, saveToDb, retryCounter) {
     let uploadedFilesData = [];
     try {
+        changePageLinkStateFromCrawlerStatus('', 'blackHoleUpload', 'checkUploadIsPossible', retryCounter);
         let checkPossible = await checkUploadIsPossible(fileNames);
         if (checkPossible !== 'ok') {
             return checkPossible;
         }
 
+        changePageLinkStateFromCrawlerStatus('', 'blackHoleUpload', 'checkUploadIsPossible', retryCounter);
         await loginToBlackHole(page);
 
         let status = getServerStatusFlags();
         for (let i = 0; i < fileNames.length; i++) {
+            changePageLinkStateFromCrawlerStatus('', 'blackHoleUpload', 'waitForPrevUploadComplete', retryCounter);
             while (status.uploadCounter >= 1) {
                 await new Promise(resolve => setTimeout(resolve, 60 * 1000)); //1 min
             }
 
+            changePageLinkStateFromCrawlerStatus('', 'blackHoleUpload', 'choosingFile', retryCounter);
             await page.waitForSelector('input[id=file]', {visible: true});
             const inputUploadHandle = await page.$('input[id=file]');
             let fileToUpload = path.join('.', 'downloadFiles', fileNames[i]);
             await inputUploadHandle.uploadFile(fileToUpload);
+            changePageLinkStateFromCrawlerStatus('', 'blackHoleUpload', 'uploadFileStart', retryCounter);
             let fileData = await uploadFileStart(fileNames[i], saveToDb);
 
             await new Promise(async (resolve, reject) => {
@@ -43,10 +54,14 @@ export async function uploadFileToBlackHole(page, fileNames, saveToDb) {
 
                         if (Date.now() - uploadProgress.time >= 2 * 60 * 1000) {
                             if (text === uploadProgress.text && uploadProgress.time && text.toLowerCase().includes('uploading')) {
+                                updateBlackHoleUploadMessage('', 0, 'error');
+                                changePageLinkStateFromCrawlerStatus('', 'blackHoleUpload', 'uploadFileStart --stopped', retryCounter);
                                 return reject("upload progress stopped");
                             } else {
                                 uploadProgress.time = Date.now();
                                 uploadProgress.text = text;
+                                updateBlackHoleUploadMessage(text, Date.now(), 'active');
+                                changePageLinkStateFromCrawlerStatus('', 'blackHoleUpload', 'uploadFileStart --' + text, retryCounter);
                             }
                         }
                     }, 3000);
@@ -58,25 +73,29 @@ export async function uploadFileToBlackHole(page, fileNames, saveToDb) {
                     );
 
                     clearInterval(intervalId);
+                    updateBlackHoleUploadMessage('', 0, 'done');
                     resolve("ok");
                 } catch (error2) {
+                    removePageLinkToCrawlerStatus('');
                     saveError(error2);
                     clearInterval(intervalId);
                     reject(error2);
                 }
             });
 
+            changePageLinkStateFromCrawlerStatus('', 'blackHoleUpload', 'copyLinkToClipboard', retryCounter);
             await page.waitForSelector("#copyToClipboard");
             let copyLinkButton = await page.$("#copyToClipboard");
             await copyLinkButton.click();
             let copyLinkButton2 = await page.$x("//button[contains(. , 'Copy link')]");
             await copyLinkButton2[1].evaluate(b => b.click());
             let uploadLink = await page.evaluate(() => navigator.clipboard.readText());
-
+            changePageLinkStateFromCrawlerStatus('', 'blackHoleUpload', 'copyLinkToClipboard --end', retryCounter);
             await uploadFileEnd(fileNames[i], uploadLink, saveToDb);
             uploadedFilesData.push(fileData);
         }
 
+        removePageLinkToCrawlerStatus('');
         return {
             message: "ok",
             uploadResults: uploadedFilesData,
@@ -86,6 +105,7 @@ export async function uploadFileToBlackHole(page, fileNames, saveToDb) {
         for (let i = 0; i < fileNames.length; i++) {
             await uploadFileEnd(fileNames[i], '', saveToDb, true);
         }
+        removePageLinkToCrawlerStatus('');
         return {
             message: "Internal server error",
             uploadResults: uploadedFilesData,
