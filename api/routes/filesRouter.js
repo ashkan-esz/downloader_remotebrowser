@@ -1,6 +1,7 @@
 import {Router} from "express";
 import middlewares from '../middlewares/index.js';
-import {downloadFile, getFilesStatus, removeFile} from "../../files/files.js";
+import {downloadFile, removeFile} from "../../files/files.js";
+import {getFilesStatus} from "../../serverStatus.js";
 
 const router = Router();
 

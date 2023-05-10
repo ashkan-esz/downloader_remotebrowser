@@ -1,28 +1,16 @@
-import config from "../config/index.js";
-import os from "os";
+import axios from "axios";
 import fs from "fs";
 import path from "path";
-import {fileURLToPath} from "url";
 import * as stream from 'stream';
 import {promisify} from 'util';
-import nou from 'node-os-utils';
-import checkDiskSpace from 'check-disk-space';
-import pidusage from 'pidusage';
 import {saveError} from "../saveError.js";
-import axios from "axios";
-import {executeUrl, getBrowserPid} from "../browser/puppetterBrowser.js";
+import {executeUrl} from "../browser/puppetterBrowser.js";
 import {getLinksDB, resetOutdatedFlagsDB, updateLinkDataDB} from "../db/LinksCollection.js";
-import * as Sentry from "@sentry/node";
+import {getDiskStatus, getFilesStatus, getMemoryStatus, getServerStatusFlags} from "../serverStatus.js";
+import {saveCrawlerWarning} from "../db/serverAnalysisDbMethods.js";
+import config from "../config/index.js";
 
 const promisifiedFinished = promisify(stream.finished);
-
-const status = {
-    uploadAndDownloadFiles: [],
-    downloadCounter: 0,
-    uploadCounter: 0,
-    uploadJobRunning: false,
-    lastTimeCrawlerUse: 0,
-}
 
 try {
     await fs.promises.mkdir(path.join('.', 'downloadFiles'));
@@ -38,17 +26,11 @@ try {
 } catch (error) {
 }
 
-export function getStatus() {
-    return status;
-}
-
-export function newCrawlerCall() {
-    status.lastTimeCrawlerUse = new Date();
-}
-
 //-------------------------------------------------
 //-------------------------------------------------
 export async function startUploadJob() {
+    let status = getServerStatusFlags();
+
     try {
         if (status.uploadJobRunning) {
             return;
@@ -94,7 +76,7 @@ export async function startUploadJob() {
                 await uploadFiles(shouldUploadFiles, true);
             }
             if (noFileThatCanBeDownloaded) {
-                Sentry.captureMessage("Warning: all files are larger than empty space");
+                await saveCrawlerWarning(`RemoteBrowser (${config.serverName})): uploadJob: all files are larger than empty space`);
                 break;
             }
             if (shouldUploadFiles.length === 0) {
@@ -114,105 +96,23 @@ export async function startUploadJob() {
 //-------------------------------------------------
 //-------------------------------------------------
 
-export async function getFilesStatus() {
+export async function getDownloadFilesTotalSize() {
     try {
         let dir = await fs.promises.readdir(path.join('.', 'downloadFiles'));
         let filesPromise = dir.map(file => fs.promises.stat(path.join('.', 'downloadFiles', file)));
         let files = (await Promise.allSettled(filesPromise)).map(item => item.value);
         let filesTotalSize = files.reduce((acc, file) => acc + (file?.size || 0), 0) / (1024 * 1024);
-
-        const __filename = fileURLToPath(import.meta.url);
-        let disStatus_os = await checkDiskSpace('/' + (__filename.split('/')[1] || ''));
-        let memoryStatus_os = await nou.mem.info();
-
-        let result = {
-            now: new Date(),
-            files: dir.map((fileName, index) => {
-                let temp = status.uploadAndDownloadFiles.find(item => item.fileName === fileName);
-                if (temp) {
-                    return temp;
-                }
-                return ({
-                    fileName: fileName,
-                    size: (files[index]?.size || 0) / (1024 * 1024),
-                    startDownload: '',
-                    endDownload: '',
-                    downloadLink: '',
-                    isDownloading: false,
-                    startUpload: '',
-                    endUpload: '',
-                    uploadLink: '',
-                    isUploading: false,
-                });
-            }),
-            filesTotalSize: filesTotalSize,
-            downloadCount: status.downloadCounter,
-            uploadCount: status.uploadCounter,
-            uploadJobRunning: status.uploadJobRunning,
-            lastTimeCrawlerUse: status.lastTimeCrawlerUse,
-            disStatus: getDiskStatus(filesTotalSize),
-            memoryStatus: await getMemoryStatus(),
-            disStatus_os: {
-                diskPath: disStatus_os.diskPath,
-                total: disStatus_os.size / (1024 * 1024),
-                used: (disStatus_os.size - disStatus_os.free) / (1024 * 1024),
-                free: disStatus_os.free / (1024 * 1024),
-            },
-            memoryStatus_os: {
-                total: memoryStatus_os.totalMemMb,
-                used: memoryStatus_os.usedMemMb,
-                free: memoryStatus_os.freeMemMb,
-            },
-            memoryStatus_os2: {
-                total: os.totalmem() / (1024 * 1024),
-                used: (os.totalmem() - os.freemem()) / (1024 * 1024),
-                free: os.freemem() / (1024 * 1024),
-            },
-        }
-
-        return result;
+        return {filesTotalSize, files, dir};
     } catch (error) {
         saveError(error);
-        return null;
+        return {filesTotalSize: 0, files: [], dir: ''};
     }
 }
 
-//-------------------------------------------------
-//-------------------------------------------------
-
-export function getDiskStatus(filesTotalSize) {
-    return ({
-        total: config.totalDiskSpace,
-        used: config.defaultUsedDiskSpace + filesTotalSize,
-        free: config.totalDiskSpace - (config.defaultUsedDiskSpace + filesTotalSize),
-    });
-}
-
-export async function getMemoryStatus() {
-    let memoryStatus = process.memoryUsage();
-    Object.keys(memoryStatus).forEach(key => {
-        memoryStatus[key] = memoryStatus[key] / (1024 * 1024)
-    });
-    let puppeteerPid = getBrowserPid();
-    let puppeteerUsage = puppeteerPid ? await pidusage(puppeteerPid) : null;
-    let puppeteerUsage_memory = puppeteerUsage ? puppeteerUsage.memory / (1024 * 1024) : 0;
-
-    return ({
-        total: config.totalMemoryAmount,
-        used_node: memoryStatus.rss,
-        used_pupputeer: puppeteerUsage_memory,
-        free: config.totalMemoryAmount - (memoryStatus.rss + puppeteerUsage_memory),
-        allData: memoryStatus,
-        puppeteerCpu: puppeteerUsage?.cpu || 0,
-    });
-}
-
-//-------------------------------------------------
-//-------------------------------------------------
-
-
 export async function removeFile(fileName, newFileStatus = false) {
     try {
+        let status = getServerStatusFlags();
+
         if (status.uploadJobRunning) {
             return {
                 message: 'Cannot delete files when uploadJob is running',
@@ -264,6 +164,8 @@ export async function removeFile(fileName, newFileStatus = false) {
 
 export async function downloadFile(downloadLink, saveToDb, isUploadJob = false) {
     try {
+        let status = getServerStatusFlags();
+
         if (status.uploadJobRunning && !isUploadJob) {
             return {
                 message: 'Cannot download files when uploadJob is running',
@@ -316,7 +218,7 @@ export async function downloadFile(downloadLink, saveToDb, isUploadJob = false) 
         let downloadingFilesSize = status.uploadAndDownloadFiles
             .filter(item => item.isDownloading)
             .reduce((acc, file) => acc + file.size, 0);
-        let freeDiskSpace = getDiskStatus(downloadingFilesSize).free;
+        let freeDiskSpace = await getDiskStatus(downloadingFilesSize).free;
         if (downloadingFilesSize + fileSize > (freeDiskSpace - 10)) {
             return {
                 fileData: null,
@@ -355,6 +257,8 @@ export async function uploadFiles(fileNames, saveToDb) {
 //-------------------------------------------------
 
 async function addNewDownloadingFile(fileName, fileSize, downloadLink, startTime, saveToDb) {
+    let status = getServerStatusFlags();
+
     let newFileData = {
         fileName: fileName,
         size: fileSize,
@@ -380,6 +284,8 @@ async function addNewDownloadingFile(fileName, fileSize, downloadLink, startTime
 }
 
 async function fileDownloadEnd(fileName, saveToDb) {
+    let status = getServerStatusFlags();
+
     let fileData = status.uploadAndDownloadFiles.find(item => item.fileName === fileName);
     if (fileData) {
         fileData.endDownload = new Date();
@@ -396,6 +302,8 @@ async function fileDownloadEnd(fileName, saveToDb) {
 }
 
 export async function uploadFileStart(fileName, saveToDb) {
+    let status = getServerStatusFlags();
+
     let fileData = status.uploadAndDownloadFiles.find(item => item.fileName === fileName);
     if (fileData) {
         fileData.startUpload = new Date();
@@ -412,6 +320,8 @@ export async function uploadFileStart(fileName, saveToDb) {
 }
 
 export async function uploadFileEnd(fileName, uploadLink, saveToDb, onError = false) {
+    let status = getServerStatusFlags();
+
     let fileData = status.uploadAndDownloadFiles.find(item => item.fileName === fileName);
     if (fileData) {
         fileData.endUpload = onError ? 0 : new Date();

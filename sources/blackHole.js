@@ -1,6 +1,7 @@
 import config from "../config/index.js";
 import path from "path";
-import {getFilesStatus, getStatus, uploadFileEnd, uploadFileStart} from "../files/files.js";
+import {uploadFileEnd, uploadFileStart} from "../files/files.js";
+import {getFilesStatus, getServerStatusFlags} from "../serverStatus.js";
 import {saveError} from "../saveError.js";
 
 
@@ -14,7 +15,7 @@ export async function uploadFileToBlackHole(page, fileNames, saveToDb) {
 
         await loginToBlackHole(page);
 
-        let status = getStatus();
+        let status = getServerStatusFlags();
         for (let i = 0; i < fileNames.length; i++) {
             while (status.uploadCounter >= 1) {
                 await new Promise(resolve => setTimeout(resolve, 60 * 1000)); //1 min

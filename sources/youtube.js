@@ -41,7 +41,7 @@ export async function getYoutubeDownloadLink(page, url, retryCounter) {
         if (error.message && error.message.match(/((timeout)|(Waiting failed:)|(Waiting for selector)) .+ exceeded/i)) {
             if (retryCounter === 0) {
                 const simpleUrl = url.replace('https://', '').split('/')[0];
-                await saveCrawlerWarning(`RemoteBrowser error on (page: ${simpleUrl}), (ErrorMessage: ${error.message}), (Method: 1), (serverName: ${config.serverName})`);
+                await saveCrawlerWarning(`RemoteBrowser (${config.serverName}): error on (page: ${simpleUrl}), (ErrorMessage: ${error.message}), (Method: 1)`);
             }
         } else {
             saveError(error);
@@ -102,7 +102,7 @@ export async function getYoutubeDownloadLink2(page, url, retryCounter) {
         if (error.message && error.message.match(/((timeout)|(Waiting failed:)|(Waiting for selector)) .+ exceeded/i)) {
             if (retryCounter === 0) {
                 const simpleUrl = url.replace('https://', '').split('/')[0];
-                await saveCrawlerWarning(`RemoteBrowser error on (page: ${simpleUrl}), (ErrorMessage: ${error.message}), (Method: 2), (serverName: ${config.serverName})`);
+                await saveCrawlerWarning(`RemoteBrowser (${config.serverName}): error on (page: ${simpleUrl}), (ErrorMessage: ${error.message}), (Method: 2)`);
             }
         } else {
             saveError(error);

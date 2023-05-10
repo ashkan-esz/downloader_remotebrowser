@@ -1,8 +1,8 @@
 import config from "../config/index.js";
 import {executeUrl} from "./puppetterBrowser.js";
 import {saveError} from "../saveError.js";
-import {newCrawlerCall} from "../files/files.js";
 import {saveCrawlerWarning} from "../db/serverAnalysisDbMethods.js";
+import {newCrawlerCallStart} from "../serverStatus.js";
 
 let browserStatus = {
     digimovieTimeoutErrorTime: 0,
@@ -16,7 +16,7 @@ export async function getPageData(url, cookieOnly) {
         retryCount: 0,
         pageTitle: '',
     }
-    newCrawlerCall();
+    newCrawlerCallStart();
     let execResult = await executeUrl(url, cookieOnly);
     pageData.retryCount = execResult.retryCounter;
     if (execResult.res) {
@@ -56,8 +56,8 @@ async function loadPage(url, page, retryCounter) {
     } catch (error) {
         if (error.message && error.message.match(/timeout .+ exceeded/i)) {
             if (retryCounter === 0) {
-                const simpleUrl = url.replace('https://','').split('/')[0];
-                await saveCrawlerWarning(`RemoteBrowser error on (page: ${simpleUrl}), (ErrorMessage: ${error.message}), (serverName: ${config.serverName})`);
+                const simpleUrl = url.replace('https://', '').split('/')[0];
+                await saveCrawlerWarning(`RemoteBrowser (${config.serverName}): error on (page: ${simpleUrl}), (ErrorMessage: ${error.message})`);
             }
         } else {
             error.url = url;
@@ -82,8 +82,8 @@ async function loadPage(url, page, retryCounter) {
     } catch (error) {
         if (error.message && error.message.match(/((timeout)|(Waiting failed:)|(Waiting for selector)) .+ exceeded/i)) {
             if (retryCounter === 0) {
-                const simpleUrl = url.replace('https://','').split('/')[0];
-                await saveCrawlerWarning(`RemoteBrowser error on (page: ${simpleUrl}), (ErrorMessage: ${error.message}), (serverName: ${config.serverName})`);
+                const simpleUrl = url.replace('https://', '').split('/')[0];
+                await saveCrawlerWarning(`RemoteBrowser (${config.serverName}): error on (page: ${simpleUrl}), (ErrorMessage: ${error.message})`);
             }
         } else if (error.message === 'All promises were rejected') {
             if (Date.now() - browserStatus.digimovieTimeoutErrorTime > 10 * 60 * 1000) {  //10min
