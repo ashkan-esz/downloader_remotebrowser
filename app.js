@@ -15,6 +15,7 @@ const app = express();
 import headlessBrowser from "./api/routes/headlessBrowser.js";
 import filesRouter from "./api/routes/filesRouter.js";
 import youtubeRouter from "./api/routes/youtubeRouter.js";
+import serverStatusRouter from "./api/routes/serverStatusRouter.js";
 //--------------middleware--------------
 Sentry.init({
     dsn: config.sentryDns,
@@ -40,6 +41,7 @@ await startBrowser();
 app.use('/headlessBrowser', headlessBrowser);
 app.use('/files', filesRouter);
 app.use('/youtube', youtubeRouter);
+app.use('/serverStatus', serverStatusRouter);
 //--------------------------------------
 //--------------------------------------
 
