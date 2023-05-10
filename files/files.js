@@ -6,7 +6,13 @@ import {promisify} from 'util';
 import {saveError} from "../saveError.js";
 import {executeUrl} from "../browser/puppetterBrowser.js";
 import {getLinksDB, resetOutdatedFlagsDB, updateLinkDataDB} from "../db/LinksCollection.js";
-import {getDiskStatus, getFilesStatus, getMemoryStatus, getServerStatusFlags} from "../serverStatus.js";
+import {
+    getDiskStatus,
+    getFilesStatus,
+    getMemoryStatus,
+    getServerStatusFlags,
+    isCrawlerActive
+} from "../serverStatus.js";
 import {saveCrawlerWarning} from "../db/serverAnalysisDbMethods.js";
 import config from "../config/index.js";
 
@@ -50,7 +56,7 @@ export async function startUploadJob() {
 
         //each upload job active for less than 2 hour
         while ((Date.now() - startTime) < 120 * 60 * 1000) {
-            while (status.lastTimeCrawlerUse && getDatesBetween(new Date(), status.lastTimeCrawlerUse).minutes < 5) {
+            while (isCrawlerActive()) {
                 status.uploadJobRunning = false;
                 await new Promise(resolve => setTimeout(resolve, 30 * 1000)); //30s
                 if ((Date.now() - startTime) >= 60 * 60 * 1000) {

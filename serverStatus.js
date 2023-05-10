@@ -5,8 +5,8 @@ import nou from "node-os-utils";
 import checkDiskSpace from 'check-disk-space';
 import {getBrowserPid} from "./browser/puppetterBrowser.js";
 import pidusage from "pidusage";
+import {getDatesBetween, getDownloadFilesTotalSize} from "./files/files.js";
 import {saveError} from "./saveError.js";
-import {getDownloadFilesTotalSize} from "./files/files.js";
 
 nou.options.INTERVAL = 10000;
 
@@ -18,12 +18,16 @@ const status = {
     lastTimeCrawlerUse: 0,
 }
 
-export function getServerStatusFlags(){
+export function getServerStatusFlags() {
     return status;
 }
 
 export function newCrawlerCallStart() {
     status.lastTimeCrawlerUse = new Date();
+}
+
+export function isCrawlerActive() {
+    return status.lastTimeCrawlerUse && getDatesBetween(new Date(), status.lastTimeCrawlerUse).minutes < 5;
 }
 
 //-----------------------------------
@@ -45,7 +49,35 @@ export async function getServerResourcesStatus() {
                 platform: process.platform,
                 arch: process.arch,
             },
+
+
             // crawlerStatus: getCrawlerStatusObj(),
+            lastTimeCrawlerUse: status.lastTimeCrawlerUse,
+
+            filesStatus: {
+                files: dir.map((fileName, index) => {
+                    let temp = status.uploadAndDownloadFiles.find(item => item.fileName === fileName);
+                    if (temp) {
+                        return temp;
+                    }
+                    return ({
+                        fileName: fileName,
+                        size: (files[index]?.size || 0) / (1024 * 1024),
+                        startDownload: '',
+                        endDownload: '',
+                        downloadLink: '',
+                        isDownloading: false,
+                        startUpload: '',
+                        endUpload: '',
+                        uploadLink: '',
+                        isUploading: false,
+                    });
+                }),
+                filesTotalSize: filesTotalSize,
+                downloadCount: status.downloadCounter,
+                uploadCount: status.uploadCounter,
+                uploadJobRunning: status.uploadJobRunning,
+            },
             cpu: await getCpuStatus(),
             memoryStatus: await getMemoryStatus(),
             diskStatus: await getDiskStatus(filesTotalSize),
@@ -80,15 +112,10 @@ export async function getFilesStatus() {
                     isUploading: false,
                 });
             }),
-            filesStatus:{
-                filesTotalSize: filesTotalSize,
-                downloadCount: status.downloadCounter,
-                uploadCount: status.uploadCounter,
-                uploadJobRunning: status.uploadJobRunning,
-                lastTimeCrawlerUse: status.lastTimeCrawlerUse,
-            },
-            memoryStatus: await getMemoryStatus(),
-            diskStatus: await getDiskStatus(filesTotalSize),
+            filesTotalSize: filesTotalSize,
+            downloadCount: status.downloadCounter,
+            uploadCount: status.uploadCounter,
+            uploadJobRunning: status.uploadJobRunning,
         });
     } catch (error) {
         saveError(error);

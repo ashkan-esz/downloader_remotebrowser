@@ -1,7 +1,7 @@
 import config from "../config/index.js";
 import path from "path";
 import {uploadFileEnd, uploadFileStart} from "../files/files.js";
-import {getFilesStatus, getServerStatusFlags} from "../serverStatus.js";
+import {getFilesStatus, getMemoryStatus, getServerStatusFlags} from "../serverStatus.js";
 import {saveError} from "../saveError.js";
 
 
@@ -143,9 +143,10 @@ async function checkUploadIsPossible(fileNames) {
     }
 
     let filesStatus = await getFilesStatus();
-    if (filesStatus.memoryStatus.free < 50) {
+    let memoryStatus = await getMemoryStatus();
+    if (memoryStatus.free < 50) {
         return {
-            message: `Low memory (${filesStatus.memoryStatus.free}MB)`,
+            message: `Low memory (${memoryStatus.free}MB)`,
             uploadResults: [],
         };
     }
