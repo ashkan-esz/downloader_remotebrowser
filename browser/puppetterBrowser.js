@@ -10,7 +10,7 @@ import {FingerprintGenerator} from "fingerprint-generator";
 import {FingerprintInjector} from "fingerprint-injector";
 import {uploadFileToBlackHole} from "../sources/blackHole.js";
 import {getYoutubeDownloadLink} from "../sources/youtube.js";
-import {changePageLinkStateFromCrawlerStatus} from "../serverStatus.js";
+import {changePageLinkStateFromCrawlerStatus, pauseCrawler} from "../serverStatus.js";
 
 puppeteer.use(StealthPlugin());
 puppeteer.use(
@@ -39,6 +39,7 @@ export function getBrowserPid() {
 
 export async function executeUrl(url, cookieOnly, fileNames = [], saveToDb = false, execType = '', retryCounter = 0) {
     try {
+        await pauseCrawler();
         let res = await cluster.execute({url, cookieOnly, fileNames, saveToDb, execType, retryCounter});
         if (!res && retryCounter < 1 && execType !== 'downloadYoutube') {
             retryCounter++;

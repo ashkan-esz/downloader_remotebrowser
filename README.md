@@ -18,25 +18,27 @@ Need a customized headless browser.
 
 To run this project, you will need to add the following environment variables to your .env file
 
-| Prop                            | Description                                                                   | Required                                   |
-|---------------------------------|-------------------------------------------------------------------------------|--------------------------------------------|
-| **`PORT`**                      | server port                                                                   | `false (default:3000)`                     |
-| **`PASSWORD`**                  | password of crawler                                                           | `true`                                     |
-| **`SENTRY_DNS`**                |                                                                               | `false`                                    |
-| **`CAPTCHA_SOLVER_ENDPOINT`**   | a captcha resolver service                                                    | `false`                                    |
-| **`ANIMELIST_USERNAME`**        | user to login anime source animelist                                          | `false`                                    |
-| **`ANIMELIST_PASSWORD`**        | password to login anime source animelist                                      | `false`                                    |
-| **`CRAWLER_BROWSER_TAB_COUNT`** | browser tabs (no more than 3 if ram < 500mb) you can set to 8 with ram >= 1gb | `false (default: 3)`                       |
-| **`SERVER_NAME`**               |                                                                               | `false (default: use uuid generate value)` |
-| **`CRAWLER_MONITOR`**           | show crawler monitor from `puppeteer-cluster` package                         | `false`                                    |
-| **`PRINT_ERRORS`**              | show server errors in console                                                 | `false`                                    |
-| **`BLACKHOLE_PASSWORD`**        | password needed to login to [blackHole](https://blackhole.run)                | `true`                                     |
-| **`BLACKHOLE_FILE_SIZE_LIMIT`** | uploading file size limit                                                     | `false --> default: 512`                   |
-| **`DATABASE_URL`**              | mongodb connection url                                                        | `false`                                    |
-| **`DISABLE_UPLOAD_JOB`**        | if set to true, upload job will be disabled                                   | `false`                                    |
-| **`TOTAL_MEMORY_AMOUNT`**       | amount of memory that app can use, by default its 512mb                       | `false`                                    |
-| **`TOTAL_DISK_SPACE`**          | amount of disk space that app can use, by default its 500mb                   | `false`                                    |
-| **`DEFAULT_USED_DISK_SPACE`**   | amount of disk space that app use in init state, by default its 0mb           | `false`                                    |
+| Prop                               | Description                                                                                                                    | Required                                   |
+|------------------------------------|--------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------|
+| **`PORT`**                         | server port                                                                                                                    | `false (default:3000)`                     |
+| **`PASSWORD`**                     | password of crawler                                                                                                            | `true`                                     |
+| **`SENTRY_DNS`**                   |                                                                                                                                | `false`                                    |
+| **`CAPTCHA_SOLVER_ENDPOINT`**      | a captcha resolver service                                                                                                     | `false`                                    |
+| **`ANIMELIST_USERNAME`**           | user to login anime source animelist                                                                                           | `false`                                    |
+| **`ANIMELIST_PASSWORD`**           | password to login anime source animelist                                                                                       | `false`                                    |
+| **`CRAWLER_BROWSER_TAB_COUNT`**    | browser tabs (no more than 3 if ram < 500mb) you can set to 8 with ram >= 1gb                                                  | `false (default: 3)`                       |
+| **`SERVER_NAME`**                  |                                                                                                                                | `false (default: use uuid generate value)` |
+| **`CRAWLER_MONITOR`**              | show crawler monitor from `puppeteer-cluster` package                                                                          | `false`                                    |
+| **`PRINT_ERRORS`**                 | show server errors in console                                                                                                  | `false`                                    |
+| **`BLACKHOLE_PASSWORD`**           | password needed to login to [blackHole](https://blackhole.run)                                                                 | `true`                                     |
+| **`BLACKHOLE_FILE_SIZE_LIMIT`**    | uploading file size limit                                                                                                      | `false --> default: 512`                   |
+| **`DATABASE_URL`**                 | mongodb connection url                                                                                                         | `false`                                    |
+| **`DISABLE_UPLOAD_JOB`**           | if set to true, upload job will be disabled                                                                                    | `false`                                    |
+| **`TOTAL_MEMORY_AMOUNT`**          | amount of memory that app can use, by default its 512mb                                                                        | `false`                                    |
+| **`CRAWLER_MEMORY_LIMIT`**         | if the memory usage is higher than this value, crawler will pause, if not set, it will use 80% of `CRAWLER_TOTAL_MEMORY`. (MB) | `false`                                    | 0             |
+| **`CRAWLER_PAUSE_DURATION_LIMIT`** | Number of seconds to crawler can be paused on high load                                                                        | `false`                                    | 20            |
+| **`TOTAL_DISK_SPACE`**             | amount of disk space that app can use, by default its 500mb                                                                    | `false`                                    |
+| **`DEFAULT_USED_DISK_SPACE`**      | amount of disk space that app use in init state, by default its 0mb                                                            | `false`                                    |
 
 <br/>
 

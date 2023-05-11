@@ -7,8 +7,11 @@ import {getBrowserPid} from "./browser/puppetterBrowser.js";
 import pidusage from "pidusage";
 import {getDatesBetween, getDownloadFilesTotalSize} from "./files/files.js";
 import {saveError} from "./saveError.js";
+import {saveCrawlerWarning} from "./db/serverAnalysisDbMethods.js";
 
 nou.options.INTERVAL = 10000;
+
+export const crawlerMemoryLimit = (config.memoryLimit || (config.totalMemoryAmount * 0.85)) - 20;
 
 const status = {
     uploadAndDownloadFiles: [],
@@ -22,6 +25,13 @@ const status = {
     },
     lastTimeCrawlerUse: 0,
     pageLinks: [],
+    pauseData: {
+        isPaused: false,
+        pauseReason: '',
+        pausedFrom: 0,
+        totalPausedDuration: 0,
+    },
+    crawlerState: 'ok',
 }
 
 export function getServerStatusFlags() {
@@ -29,7 +39,7 @@ export function getServerStatusFlags() {
 }
 
 export function isCrawlerActive() {
-    return status.lastTimeCrawlerUse && getDatesBetween(new Date(), status.lastTimeCrawlerUse).minutes < 5;
+    return status.pageLinks.length > 0 || (status.lastTimeCrawlerUse && getDatesBetween(new Date(), status.lastTimeCrawlerUse).minutes < 5);
 }
 
 //-----------------------------------
@@ -80,6 +90,55 @@ export function removePageLinkToCrawlerStatus(pageLink) {
 //-----------------------------------
 //-----------------------------------
 
+export async function pauseCrawler() {
+    let memoryStatus = await getMemoryStatus();
+    let cpuAverageLoad = getCpuAverageLoad();
+    const startTime = Date.now();
+    while (memoryStatus.used >= crawlerMemoryLimit || cpuAverageLoad[0] > 95) {
+        if (Date.now() - startTime > config.pauseDurationLimit * 1000) {
+            await saveCrawlerWarning(`RemoteBrowser: Maximum allowed duration for crawler pause exceeded (${config.pauseDurationLimit}s) (crawler need more resource)`);
+            break;
+        }
+
+        const pauseReason = memoryStatus.used >= crawlerMemoryLimit
+            ? `memory/limit: ${memoryStatus.used.toFixed(0)}/${crawlerMemoryLimit.toFixed(0)} `
+            : `cpu/limit: ${cpuAverageLoad[0]}/95`;
+        saveCrawlerPause(pauseReason);
+        await new Promise(resolve => setTimeout(resolve, 50));
+        memoryStatus = await getMemoryStatus(false);
+        cpuAverageLoad = getCpuAverageLoad();
+    }
+    removeCrawlerPause();
+}
+
+function saveCrawlerPause(reason) {
+    if (status.pauseData.isPaused) {
+        status.pauseData.pauseReason = reason;
+        return "crawler is already paused";
+    }
+    status.crawlerState = 'paused';
+    status.pauseData.isPaused = true;
+    status.pauseData.pauseReason = reason;
+    status.pauseData.pausedFrom = Date.now();
+    return "ok";
+}
+
+function removeCrawlerPause() {
+    if (!status.pauseData.isPaused) {
+        return "crawler is not paused";
+    }
+    const pauseDuration = (Date.now() - status.pauseData.pausedFrom) / (60 * 1000);
+    status.pauseData.isPaused = false;
+    status.pauseData.pauseReason = '';
+    status.pauseData.totalPausedDuration += pauseDuration;
+    status.pauseData.pausedFrom = 0;
+    status.crawlerState = 'ok';
+    return "ok";
+}
+
+//-----------------------------------
+//-----------------------------------
+
 export async function getServerResourcesStatus() {
     let {filesTotalSize, files, dir} = await getDownloadFilesTotalSize();
 
@@ -105,6 +164,9 @@ export async function getServerResourcesStatus() {
             crawlerStatus: {
                 lastTimeCrawlerUse: status.lastTimeCrawlerUse,
                 pageLinks: status.pageLinks,
+                memoryLimit: crawlerMemoryLimit,
+                pauseData: status.pauseData,
+                crawlerState: status.crawlerState,
             },
             cpu: await getCpuStatus(),
             memoryStatus: await getMemoryStatus(),
@@ -198,6 +260,10 @@ export async function getCpuStatus(includeUsage = true) {
         result.free = await nou.cpu.free(1000);
     }
     return result;
+}
+
+export function getCpuAverageLoad() {
+    return nou.cpu.loadavg();
 }
 
 export async function getMemoryStatus() {
