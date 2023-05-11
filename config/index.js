@@ -21,7 +21,7 @@ export default {
     disableUploadJob: process.env.DISABLE_UPLOAD_JOB,
     totalMemoryAmount: Number(process.env.TOTAL_MEMORY_AMOUNT || 512),
     memoryLimit: Number(process.env.CRAWLER_MEMORY_LIMIT || 0),
-    pauseDurationLimit: Number(process.env.CRAWLER_PAUSE_DURATION_LIMIT || 20),
+    pauseDurationLimit: Number(process.env.CRAWLER_PAUSE_DURATION_LIMIT || 30),
     totalDiskSpace: Number(process.env.TOTAL_DISK_SPACE || 500),
     defaultUsedDiskSpace: Number(process.env.DEFAULT_USED_DISK_SPACE || 0), //estimate value based on heroku
     sources: {
