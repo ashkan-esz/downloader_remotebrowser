@@ -61,7 +61,12 @@ async function loadPage(url, page, retryCounter) {
             await page.goto(url);
         }
     } catch (error) {
-        if (error.message && (error.message.match(/timeout .+ exceeded/i) || error.message.includes('net::ERR_TIMED_OUT')|| error.message.includes('net::ERR_CONNECTION_TIMED_OUT'))) {
+        if (error.message && (
+            error.message.match(/timeout .+ exceeded/i) ||
+            error.message.includes('net::ERR_TIMED_OUT') ||
+            error.message.includes('net::ERR_CONNECTION_TIMED_OUT') ||
+            error.message.includes('net::ERR_DNS_NO_MATCHING_SUPPORTED_ALPN')
+        )) {
             if (retryCounter === 0) {
                 const simpleUrl = url.replace('https://', '').split('/')[0];
                 await saveCrawlerWarning(`RemoteBrowser (${config.serverName}): error on (page: ${simpleUrl}), (ErrorMessage: ${error.message})`);
