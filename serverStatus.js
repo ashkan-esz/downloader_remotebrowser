@@ -146,6 +146,7 @@ export async function getServerResourcesStatus() {
         return ({
             now: new Date(),
             server: {
+                serverName: config.serverName,
                 hostName: os.hostname(),
                 upTime: os.uptime() / 60,
                 nodeUpTime: process.uptime() / 60,
