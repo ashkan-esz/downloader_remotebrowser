@@ -48,7 +48,8 @@ export async function getYoutubeDownloadLink(page, url, retryCounter) {
         if (error.message && error.message.match(/((timeout)|(Waiting failed:)|(Waiting for selector)) .+ exceeded/i)) {
             if (retryCounter === 0) {
                 const simpleUrl = url.replace('https://', '').split('/')[0];
-                await saveCrawlerWarning(`RemoteBrowser (${config.serverName}): error on (page: ${simpleUrl}), (ErrorMessage: ${error.message}), (Method: 1)`);
+                const errorMessage = error.message.split(simpleUrl)[0];
+                await saveCrawlerWarning(`RemoteBrowser (${config.serverName}): error on (page: ${simpleUrl}), (ErrorMessage: ${errorMessage}), (Method: 1)`);
             }
         } else {
             saveError(error);
@@ -115,7 +116,8 @@ export async function getYoutubeDownloadLink2(page, url, originalUrl, retryCount
         if (error.message && error.message.match(/((timeout)|(Waiting failed:)|(Waiting for selector)) .+ exceeded/i)) {
             if (retryCounter === 0) {
                 const simpleUrl = url.replace('https://', '').split('/')[0];
-                await saveCrawlerWarning(`RemoteBrowser (${config.serverName}): error on (page: ${simpleUrl}), (ErrorMessage: ${error.message}), (Method: 2)`);
+                const errorMessage = error.message.split(simpleUrl)[0];
+                await saveCrawlerWarning(`RemoteBrowser (${config.serverName}): error on (page: ${simpleUrl}), (ErrorMessage: ${errorMessage}), (Method: 2)`);
             }
         } else {
             saveError(error);
