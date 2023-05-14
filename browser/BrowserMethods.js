@@ -69,7 +69,7 @@ async function loadPage(url, page, retryCounter) {
         )) {
             if (retryCounter === 0) {
                 const simpleUrl = url.replace('https://', '').split('/')[0];
-                const errorMessage = error.message.split(simpleUrl)[0];
+                const errorMessage = error.message.split('http')[0];
                 await saveCrawlerWarning(`RemoteBrowser (${config.serverName}): error on (page: ${simpleUrl}), (ErrorMessage: ${errorMessage})`);
             }
         } else {
@@ -97,7 +97,7 @@ async function loadPage(url, page, retryCounter) {
         if (error.message && error.message.match(/((timeout)|(Waiting failed:)|(Waiting for selector)) .+ exceeded/i)) {
             if (retryCounter === 0) {
                 const simpleUrl = url.replace('https://', '').split('/')[0];
-                const errorMessage = error.message.split(simpleUrl)[0];
+                const errorMessage = error.message.split('http')[0];
                 await saveCrawlerWarning(`RemoteBrowser (${config.serverName}): error on (page: ${simpleUrl}), (ErrorMessage: ${errorMessage})`);
             }
         } else if (error.message === 'All promises were rejected') {

@@ -54,14 +54,13 @@ export function updateBlackHoleUploadMessage(message, time, state) {
 //-----------------------------------
 //-----------------------------------
 
-export function addPageLinkToCrawlerStatus(pageLink, pageNumber) {
+export function addPageLinkToCrawlerStatus(pageLink) {
     status.lastTimeCrawlerUse = new Date();
 
     pageLink = getDecodedLink(pageLink);
     if (!status.pageLinks.find(item => item.url === pageLink)) {
         status.pageLinks.push({
             url: pageLink,
-            pageNumber: pageNumber,
             time: new Date(),
             state: 'start',
             stateTime: new Date(),
@@ -96,7 +95,7 @@ export async function pauseCrawler() {
     const startTime = Date.now();
     while (memoryStatus.used >= crawlerMemoryLimit || cpuAverageLoad[0] > 95) {
         if (Date.now() - startTime > config.pauseDurationLimit * 1000) {
-            await saveCrawlerWarning(`RemoteBrowser: Maximum allowed duration for crawler pause exceeded (${config.pauseDurationLimit}s) (crawler need more resource)`);
+            await saveCrawlerWarning(`RemoteBrowser (${config.serverName}): Maximum allowed duration for crawler pause exceeded (${config.pauseDurationLimit}s) (crawler need more resource)`);
             break;
         }
 

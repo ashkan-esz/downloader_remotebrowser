@@ -9,6 +9,9 @@ import compression from "compression";
 import {startAgenda} from "./agenda/index.js";
 import {closeBrowser, startBrowser} from "./browser/puppetterBrowser.js";
 import {saveError} from "./saveError.js";
+import 'express-async-errors';
+//--------------------------------------
+import {removePageLinkToCrawlerStatus} from "./serverStatus.js";
 //--------------------------------------
 const app = express();
 //---------------Routes-----------------
@@ -57,6 +60,10 @@ app.use(function (req, res) {
 });
 
 app.use((err, req, res, next) => {
+    if (req.query.url !== undefined && req.query.url !== null) {
+        removePageLinkToCrawlerStatus(req.query.url);
+    }
+    saveError(err);
     res.status(500).json({error: true, message: 'server error'});
 });
 
@@ -65,8 +72,12 @@ const server = app.listen(config.port, () => {
 });
 
 server.on('close', async () => {
-    await closeBrowser();
-    server.close();
+    try {
+        await closeBrowser();
+        server.close();
+    } catch (e) {
+        console.log(e);
+    }
 });
 
 process
