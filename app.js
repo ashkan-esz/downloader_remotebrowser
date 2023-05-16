@@ -86,10 +86,13 @@ process
         console.error(reason, 'Unhandled Rejection at Promise', p);
         reason.pp = p;
         await saveError(reason);
+        await closeBrowser();
+        await startBrowser();
     })
     .on('uncaughtException', async err => {
         console.error(err, 'Uncaught Exception thrown');
         await saveError(err);
+        await closeBrowser();
         // Optional: Ensure process will stop after this
         process.exit(1);
     });

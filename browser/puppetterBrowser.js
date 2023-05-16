@@ -68,7 +68,8 @@ export async function startBrowser() {
             args: [
                 "--no-sandbox",
                 "--single-process",
-                "--no-zygote"
+                "--no-zygote",
+                "--disable-dev-shm-usage",
             ]
         }
         cluster = await Cluster.launch({

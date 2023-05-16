@@ -11,7 +11,7 @@ import {saveCrawlerWarning} from "./db/serverAnalysisDbMethods.js";
 
 nou.options.INTERVAL = 10000;
 
-export const crawlerMemoryLimit = (config.memoryLimit || (config.totalMemoryAmount * 0.85)) - 20;
+export const crawlerMemoryLimit = (config.memoryLimit || (config.totalMemoryAmount * 0.95)) - 15;
 
 const status = {
     uploadAndDownloadFiles: [],
@@ -160,6 +160,7 @@ export async function getServerResourcesStatus() {
                     fileSizeLimit: config.blackHole.fileSizeLimit,
                 },
                 disableUploadJob: config.disableUploadJob,
+                pauseDurationLimit: config.pauseDurationLimit,
             },
             crawlerStatus: {
                 lastTimeCrawlerUse: status.lastTimeCrawlerUse,

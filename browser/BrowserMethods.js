@@ -8,9 +8,6 @@ import {
     removePageLinkToCrawlerStatus
 } from "../serverStatus.js";
 
-let browserStatus = {
-    digimovieTimeoutErrorTime: 0,
-};
 
 export async function getPageData(url, cookieOnly) {
     let pageData = {
@@ -69,7 +66,7 @@ async function loadPage(url, page, retryCounter) {
         )) {
             if (retryCounter === 0) {
                 const simpleUrl = url.replace('https://', '').split('/')[0];
-                const errorMessage = error.message.split('http')[0];
+                const errorMessage = error.message.split('http')[0].replace(/\sat$/, '').trim();
                 await saveCrawlerWarning(`RemoteBrowser (${config.serverName}): error on (page: ${simpleUrl}), (ErrorMessage: ${errorMessage})`);
             }
         } else {
@@ -101,11 +98,9 @@ async function loadPage(url, page, retryCounter) {
                 await saveCrawlerWarning(`RemoteBrowser (${config.serverName}): error on (page: ${simpleUrl}), (ErrorMessage: ${errorMessage})`);
             }
         } else if (error.message === 'All promises were rejected') {
-            if (Date.now() - browserStatus.digimovieTimeoutErrorTime > 10 * 60 * 1000) {  //10min
-                browserStatus.digimovieTimeoutErrorTime = Date.now();
-                error.url = url;
-                saveError(error, true);
-            }
+            const simpleUrl = url.replace('https://', '').split('/')[0];
+            const errorMessage = "Waiting for selector `.main_site/.body_favorites` failed: Waiting failed: 10000ms exceeded";
+            await saveCrawlerWarning(`RemoteBrowser (${config.serverName}): error on (page: ${simpleUrl}), (ErrorMessage: ${errorMessage})`);
         } else {
             saveError(error);
         }
