@@ -244,9 +244,7 @@ export async function getFilesStatus() {
 //-------------------------------------------
 
 export async function getCpuStatus(includeUsage = true) {
-
-    let puppeteerPid = getBrowserPid();
-    let puppeteerUsage = puppeteerPid ? await pidusage(puppeteerPid) : null;
+    const puppeteerUsage = await getPuppeteerUsage();
 
     const cpu = nou.cpu;
     const result = {
@@ -275,8 +273,7 @@ export async function getMemoryStatus() {
         memoryStatus[key] = memoryStatus[key] / (1024 * 1024)
     });
 
-    let puppeteerPid = getBrowserPid();
-    let puppeteerUsage = puppeteerPid ? await pidusage(puppeteerPid) : null;
+    const puppeteerUsage = await getPuppeteerUsage();
     let puppeteerUsage_memory = puppeteerUsage ? puppeteerUsage.memory / (1024 * 1024) : 0;
 
     return ({
@@ -314,6 +311,15 @@ export async function getDiskStatus(filesTotalSize) {
             free: diskStatus_os.free / (1024 * 1024),
         }
     });
+}
+
+async function getPuppeteerUsage() {
+    try {
+        let puppeteerPid = getBrowserPid();
+        return puppeteerPid ? await pidusage(puppeteerPid) : null;
+    } catch (error) {
+        saveError(error);
+    }
 }
 
 //-------------------------------------------

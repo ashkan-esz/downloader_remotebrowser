@@ -84,7 +84,11 @@ export async function startBrowser() {
         });
 
         await cluster.task(async ({page, data: {url, cookieOnly, fileNames, saveToDb, execType, retryCounter}}) => {
-            browserPid = page.browser().process().pid;
+            try {
+                browserPid = page.browser().process().pid;
+            } catch (e) {
+                saveError(e);
+            }
             changePageLinkStateFromCrawlerStatus(url, '', 'start cluster task', retryCounter);
             if (url.includes('blackHole.') || fileNames.length > 0) {
                 changePageLinkStateFromCrawlerStatus(url, 'blackHoleUpload', 'start cluster task', retryCounter);
