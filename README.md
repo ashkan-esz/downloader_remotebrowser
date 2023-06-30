@@ -12,7 +12,6 @@ Need a customized headless browser.
 1. Set environment variables
 2. Run command `npm install` and then `npm run start`.
 
-> you may want to change `--max_old_space_size` and `--gc_interval` values in start script (optimized for 500mb ram).
 
 ## Environment Variables
 

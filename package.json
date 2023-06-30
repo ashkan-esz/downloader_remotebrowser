@@ -8,7 +8,7 @@
   "type": "module",
   "scripts": {
     "prestart": "node node_modules/puppeteer/install.js",
-    "start": "NODE_ENV=production node --optimize_for_size --max_old_space_size=460 --gc_interval=100 app.js",
+    "start": "NODE_ENV=production node --max_old_space_size=1024 app.js",
     "start_dev": "NODE_ENV=dev nodemon -r dotenv/config app.js",
     "start_dev_traceGc": "NODE_ENV=dev node --trace_gc dotenv/config app.js",
     "test": "NODE_ENV=dev node test.js"

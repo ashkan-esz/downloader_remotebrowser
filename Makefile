@@ -2,7 +2,7 @@ build-image:
 	docker image build -t express-puppeteer-docker --network=host .
 
 run-image:
-	docker run -p 5000:5000 --env-file ./.env express-puppeteer-docker
+	docker run --memory 1224m --memory-swap 1500m --cpus=".5" -p 5000:5000 --env-file ./.env express-puppeteer-docker
 
 up-dev:
 	docker-compose up --build

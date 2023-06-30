@@ -1,6 +1,7 @@
 FROM node:18.16.0-alpine
 
 ENV NODE_ENV=production
+ENV NODE_OPTIONS=--max_old_space_size=1024
 
 WORKDIR /usr/app
 
