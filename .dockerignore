@@ -1,0 +1,12 @@
+node_modules
+node_modules/*
+npm-debug.log
+build
+.git
+.idea
+*.md
+.gitignore
+downloadFiles
+test.html
+test.js
+.env

@@ -5,7 +5,7 @@ dotenv.config({path: './.env'});
 
 export default {
     nodeEnv: process.env.NODE_ENV,
-    port: process.env.PORT || 3000,
+    port: process.env.PORT || 5000,
     sentryDns: process.env.SENTRY_DNS,
     serverPassword: process.env.PASSWORD,
     printErrors: process.env.PRINT_ERRORS,

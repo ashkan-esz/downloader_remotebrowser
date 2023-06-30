@@ -20,7 +20,7 @@ To run this project, you will need to add the following environment variables to
 
 | Prop                               | Description                                                                                                                    | Required                                   |
 |------------------------------------|--------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------|
-| **`PORT`**                         | server port                                                                                                                    | `false (default:3000)`                     |
+| **`PORT`**                         | server port                                                                                                                    | `false (default:5000)`                     |
 | **`PASSWORD`**                     | password of crawler                                                                                                            | `true`                                     |
 | **`SENTRY_DNS`**                   |                                                                                                                                | `false`                                    |
 | **`CAPTCHA_SOLVER_ENDPOINT`**      | a captcha resolver service                                                                                                     | `false`                                    |

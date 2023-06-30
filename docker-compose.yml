@@ -1,0 +1,16 @@
+version: "3"
+services:
+  express-puppeteer-docker:
+    environment:
+      - NODE_ENV=development
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./:/usr/app
+    container_name: express-puppeteer-docker
+    expose:
+      - "5000"
+    ports:
+      - "5000:5000"
+    command: npm run start_dev
