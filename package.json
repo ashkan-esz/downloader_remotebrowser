@@ -7,7 +7,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "prestart": "node node_modules/puppeteer/install.js",
+    "prestart2": "node node_modules/puppeteer/install.js",
     "start": "NODE_ENV=production node --max_old_space_size=1024 app.js",
     "start_dev": "NODE_ENV=dev nodemon -r dotenv/config app.js",
     "start_dev_traceGc": "NODE_ENV=dev node --trace_gc dotenv/config app.js",

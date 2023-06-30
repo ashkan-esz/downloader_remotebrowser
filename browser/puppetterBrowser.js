@@ -65,11 +65,13 @@ export async function startBrowser() {
         const showMonitor = (config.nodeEnv === 'dev' || config.crawlerMonitor === 'true');
         const puppeteerOptions = {
             headless: "new",
+            executablePath: '/usr/bin/google-chrome',
             args: [
                 "--no-sandbox",
                 "--single-process",
                 "--no-zygote",
                 "--disable-dev-shm-usage",
+                "--disable-gpu",
             ]
         }
         cluster = await Cluster.launch({
