@@ -68,7 +68,6 @@ export async function startBrowser() {
             executablePath: '/usr/bin/google-chrome',
             args: [
                 "--no-sandbox",
-                "--single-process",
                 "--no-zygote",
                 "--disable-dev-shm-usage",
                 "--disable-gpu",
