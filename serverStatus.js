@@ -319,6 +319,7 @@ async function getPuppeteerUsage() {
         return puppeteerPid ? await pidusage(puppeteerPid) : null;
     } catch (error) {
         saveError(error);
+        return null;
     }
 }
 

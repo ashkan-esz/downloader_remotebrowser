@@ -14,12 +14,12 @@ RUN apt-get update && apt-get install gnupg wget -y && \
 
 WORKDIR /usr/app
 
-RUN chown node:node ./
-USER node
-
 COPY package*.json ./
 
 RUN npm install
+
+RUN chown node:node ./
+USER node
 
 COPY . .
 

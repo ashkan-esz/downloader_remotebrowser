@@ -57,6 +57,11 @@ async function loadPage(url, page, retryCounter) {
         } else {
             await page.goto(url);
         }
+
+        if ((await page.content()).includes('در ﺣﺎل اﻧﺘﻘﺎل ﺑﻪ ﺳﺎﯾﺖ ﻣﻮرد ﻧﻈﺮ ﻫﺴﺘﯿﺪ...')) {
+            await page.waitForNavigation({timeout: 10000});
+        }
+
     } catch (error) {
         if (error.message && (
             error.message.match(/timeout .+ exceeded/i) ||
