@@ -318,7 +318,9 @@ async function getPuppeteerUsage() {
         let puppeteerPid = getBrowserPid();
         return puppeteerPid ? await pidusage(puppeteerPid) : null;
     } catch (error) {
-        saveError(error);
+        if (error.message !== "No matching pid found") {
+            saveError(error);
+        }
         return null;
     }
 }
