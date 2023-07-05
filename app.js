@@ -11,7 +11,7 @@ import {closeBrowser, startBrowser} from "./browser/puppetterBrowser.js";
 import {saveError} from "./saveError.js";
 import 'express-async-errors';
 //--------------------------------------
-import {removePageLinkToCrawlerStatus} from "./serverStatus.js";
+import {killingCrawler, removePageLinkToCrawlerStatus, startingCrawler} from "./serverStatus.js";
 //--------------------------------------
 const app = express();
 //---------------Routes-----------------
@@ -86,12 +86,15 @@ process
         console.error(reason, 'Unhandled Rejection at Promise', p);
         reason.pp = p;
         await saveError(reason);
+        killingCrawler();
         await closeBrowser();
+        startingCrawler();
         await startBrowser();
     })
     .on('uncaughtException', async err => {
         console.error(err, 'Uncaught Exception thrown');
         await saveError(err);
+        killingCrawler();
         await closeBrowser();
         // Optional: Ensure process will stop after this
         process.exit(1);

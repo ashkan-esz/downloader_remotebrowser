@@ -42,6 +42,15 @@ export function isCrawlerActive() {
     return status.pageLinks.length > 0 || (status.lastTimeCrawlerUse && getDatesBetween(new Date(), status.lastTimeCrawlerUse).minutes < 5);
 }
 
+export function startingCrawler() {
+    status.crawlerState = 'starting';
+}
+
+export function killingCrawler() {
+    status.pageLinks = [];
+    status.crawlerState = 'closing'
+}
+
 //-----------------------------------
 //-----------------------------------
 
@@ -77,7 +86,9 @@ export function changePageLinkStateFromCrawlerStatus(pageLink, type, state, retr
         data.state = state;
         data.type = type;
         data.stateTime = new Date();
-        data.retryCounter = retryCounter;
+        if (retryCounter !== 0) {
+            data.retryCounter = retryCounter;
+        }
     }
 }
 
