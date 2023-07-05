@@ -61,22 +61,21 @@ export async function executeUrl(url, cookieOnly, fileNames = [], saveToDb = fal
 
 export async function startBrowser() {
     try {
-        const puppeteerOptions = {
-            headless: "new",
-            executablePath: '/usr/bin/google-chrome',
-            args: [
-                "--no-sandbox",
-                "--disable-setuid-sandbox",
-                "--no-zygote",
-                "--disable-dev-shm-usage",
-                "--disable-gpu",
-            ]
-        }
         cluster = await Cluster.launch({
             puppeteer: puppeteer,
             concurrency: Cluster.CONCURRENCY_PAGE,
             maxConcurrency: config.browserTabsCount,
-            puppeteerOptions: puppeteerOptions,
+            puppeteerOptions: {
+                headless: "new",
+                executablePath: '/usr/bin/google-chrome',
+                args: [
+                    "--no-sandbox",
+                    "--disable-setuid-sandbox",
+                    "--no-zygote",
+                    "--disable-dev-shm-usage",
+                    "--disable-gpu",
+                ]
+            },
             retryLimit: 1,
             workerCreationDelay: 100,
             timeout: 130 * 60 * 1000, //130 min

@@ -318,7 +318,7 @@ async function getPuppeteerUsage() {
         let puppeteerPid = getBrowserPid();
         return puppeteerPid ? await pidusage(puppeteerPid) : null;
     } catch (error) {
-        if (error.message !== "No matching pid found") {
+        if (error.message !== "No matching pid found" && error.message !== "ESRCH: no such process, read") {
             saveError(error);
         }
         return null;
