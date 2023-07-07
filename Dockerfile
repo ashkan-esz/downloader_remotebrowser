@@ -1,9 +1,32 @@
-FROM node:18.16.0-slim
+# stage 1
+FROM node:18.16.0-slim as build
 
 ENV NODE_ENV=production
 ENV NODE_OPTIONS=--max_old_space_size=1024
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV PUPPETEER_SKIP_DOWNLOAD=true
+
+#RUN apt-get update && apt-get install gnupg wget -y && \
+#  wget --quiet --output-document=- https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor > /etc/apt/trusted.gpg.d/google-archive.gpg && \
+#  sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' && \
+#  apt-get update && \
+#  apt-get install google-chrome-stable -y --no-install-recommends && \
+#  rm -rf /var/lib/apt/lists/*
+
+WORKDIR /usr/app
+
+COPY package*.json ./
+
+RUN npm install --omit=dev
+
+RUN chown node:node ./
+USER node
+
+COPY . .
+
+# stage 2
+FROM node:18.16.0-slim
+COPY --from=build /usr/app /
 
 RUN apt-get update && apt-get install gnupg wget -y && \
   wget --quiet --output-document=- https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor > /etc/apt/trusted.gpg.d/google-archive.gpg && \
@@ -12,16 +35,7 @@ RUN apt-get update && apt-get install gnupg wget -y && \
   apt-get install google-chrome-stable -y --no-install-recommends && \
   rm -rf /var/lib/apt/lists/*
 
-WORKDIR /usr/app
-
-COPY package*.json ./
-
-RUN npm install
-
-RUN chown node:node ./
-USER node
-
-COPY . .
-
 EXPOSE 5000
 CMD [ "node", "app.js"]
+
+#HEALTHCHECK CMD curl --fail http://localhost:5000 || exit 1

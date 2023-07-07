@@ -36,7 +36,7 @@ To run this project, you will need to add the following environment variables to
 | **`TOTAL_MEMORY_AMOUNT`**          | amount of memory that app can use, by default its 512mb                                                                        | `false`                                    |
 | **`CRAWLER_MEMORY_LIMIT`**         | if the memory usage is higher than this value, crawler will pause, if not set, it will use 80% of `CRAWLER_TOTAL_MEMORY`. (MB) | `false`                                    | 0             |
 | **`CRAWLER_PAUSE_DURATION_LIMIT`** | Number of seconds to crawler can be paused on high load                                                                        | `false`                                    | 30            |
-| **`TOTAL_DISK_SPACE`**             | amount of disk space that app can use, by default its 500mb                                                                    | `false`                                    |
+| **`TOTAL_DISK_SPACE`**             | amount of disk space that app can use, by default its 1024mb                                                                   | `false`                                    |
 | **`DEFAULT_USED_DISK_SPACE`**      | amount of disk space that app use in init state, by default its 0mb                                                            | `false`                                    |
 
 <br/>
