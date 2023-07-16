@@ -12,3 +12,7 @@ up-prod:
 
 down:
 	docker-compose down
+
+push-image:
+	docker tag express-puppeteer-docker ashkanaz2828/downloader_remotebrowser
+	docker push ashkanaz2828/downloader_remotebrowser

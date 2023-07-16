@@ -9,5 +9,5 @@ build
 downloadFiles
 test.html
 test.js
-.env
+*.env
 .cache
