@@ -85,8 +85,8 @@ process
         // Use your own logger here
         //console.error(reason, 'Unhandled Rejection at Promise', p);
         reason.pp = p;
-        await saveError(reason);
         killingCrawler();
+        await saveError(reason);
         await closeBrowser();
         startingCrawler();
         await startBrowser();

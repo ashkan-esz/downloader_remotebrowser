@@ -79,6 +79,7 @@ export async function startBrowser() {
                 ]
             },
             retryLimit: 1,
+            retryDelay: 1000,
             workerCreationDelay: 1000,
             timeout: 130 * 60 * 1000, //130 min
             monitor: config.crawlerMonitor,
@@ -142,7 +143,7 @@ async function configRequestInterception(page, execType) {
         }
 
         if (
-            url.match(/\.(png|jpg|jpeg|webp|gif|svg|ico|woff|woff2|ttfwebp|json|mp3|mp3ds|mp4)(\?_=\d)?$/) ||
+            url.match(/\.(png|jpg|jpeg|webp|gif|svg|ico|woff|woff2|ttf|ttfwebp|json|mp3|mp3ds|mp4)(\?_=\d)?$/) ||
             url.match(/\.css(\?ver=((.{3,6})|\d{10}))?$/) ||
             url.includes('iframe.html') ||
             url.includes('fingerprint.html') ||
@@ -153,7 +154,7 @@ async function configRequestInterception(page, execType) {
             url.match(
                 /[.\/](footer-bundle|(jquery\.ui\.position\.min)|(uikit-icons\.min)|(desktop_polymer))\.js$/) ||
             url.match(
-                /[.\/]((custom-elements-es5-adapter)|(webcomponents-sd)|(scheduler)|(www-i18n-constants))\.js$/) ||
+                /[.\/]((custom-elements-es5-adapter)|(webcomponents-sd)|(scheduler)|(codes)|(www-i18n-constants))\.js$/) ||
             url.match(/\d\d\d\.js/) ||
             url.match(
                 /(query|swiper|range|core|ajax|slick|select2|flatpickr|lazyload|dox|sweetalert2|mouse|slider|vimeo|particles)\.min\.js/) ||

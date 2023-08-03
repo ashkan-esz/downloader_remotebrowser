@@ -46,6 +46,9 @@ async function loadPage(url, page, retryCounter) {
     const originalUrl = url;
     try {
         changePageLinkStateFromCrawlerStatus(originalUrl, 'crawler', 'waitForPageLoad', retryCounter);
+        if (url.includes('film2movie') && url.match(/\/page\/\d+$/)) {
+            url = url + '/';
+        }
         if (url.includes('digimovie')) {
             if (!url.match(/\/$/)) {
                 url = url + '/';
