@@ -2,7 +2,7 @@ import config from "../config/index.js";
 import {Cluster} from "puppeteer-cluster";
 import * as originalPuppeteer from 'puppeteer';
 import puppeteer from 'puppeteer-extra';
-import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+//import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import AdblockerPlugin from 'puppeteer-extra-plugin-adblocker';
 import {handleSourceSpecificStuff} from "./BrowserMethods.js";
 import {saveError} from "../saveError.js";
@@ -12,7 +12,7 @@ import {uploadFileToBlackHole} from "../sources/blackHole.js";
 import {getYoutubeDownloadLink} from "../sources/youtube.js";
 import {changePageLinkStateFromCrawlerStatus, pauseCrawler} from "../serverStatus.js";
 
-puppeteer.use(StealthPlugin());
+//puppeteer.use(StealthPlugin());
 puppeteer.use(
     AdblockerPlugin({
         // Optionally enable Cooperative Mode for several request interceptors

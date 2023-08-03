@@ -83,7 +83,7 @@ server.on('close', async () => {
 process
     .on('unhandledRejection', async (reason, p) => {
         // Use your own logger here
-        console.error(reason, 'Unhandled Rejection at Promise', p);
+        //console.error(reason, 'Unhandled Rejection at Promise', p);
         reason.pp = p;
         await saveError(reason);
         killingCrawler();
