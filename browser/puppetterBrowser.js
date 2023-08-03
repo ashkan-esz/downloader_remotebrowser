@@ -39,7 +39,9 @@ export function getBrowserPid() {
 
 export async function executeUrl(url, cookieOnly, fileNames = [], saveToDb = false, execType = '', retryCounter = 0) {
     try {
+        changePageLinkStateFromCrawlerStatus(url, '', 'checking crawler pause', retryCounter);
         await pauseCrawler();
+        changePageLinkStateFromCrawlerStatus(url, '', 'before cluster execute', retryCounter);
         let res = await cluster.execute({url, cookieOnly, fileNames, saveToDb, execType, retryCounter});
         if (!res && retryCounter < 1 && execType !== 'downloadYoutube') {
             retryCounter++;
@@ -77,12 +79,13 @@ export async function startBrowser() {
                 ]
             },
             retryLimit: 1,
-            workerCreationDelay: 100,
+            workerCreationDelay: 1000,
             timeout: 130 * 60 * 1000, //130 min
             monitor: config.crawlerMonitor,
         });
 
         await cluster.task(async ({page, data: {url, cookieOnly, fileNames, saveToDb, execType, retryCounter}}) => {
+            changePageLinkStateFromCrawlerStatus(url, '', 'getting browser Pid', retryCounter);
             try {
                 browserPid = page.browser().process().pid;
             } catch (e) {
