@@ -76,11 +76,13 @@ export async function startBrowser() {
                     "--no-zygote",
                     "--disable-dev-shm-usage",
                     "--disable-gpu",
-                ]
+                ],
+                ignoreHTTPSErrors: true,
             },
             retryLimit: 1,
             retryDelay: 1000,
             workerCreationDelay: 1000,
+            // workerCreationDelay: 100,
             timeout: 130 * 60 * 1000, //130 min
             monitor: config.crawlerMonitor,
         });
