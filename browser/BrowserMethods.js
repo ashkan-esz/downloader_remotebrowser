@@ -28,9 +28,16 @@ export async function getPageData(url, cookieOnly) {
 }
 
 export async function handleSourceSpecificStuff(url, page, cookieOnly, retryCounter) {
-    let pageLoaded = await loadPage(url, page, retryCounter);
+    let {pageLoaded, error, needRetry} = await loadPage(url, page, retryCounter);
     if (!pageLoaded) {
-        return null;
+        return {
+            pageContent: null,
+            cookies: [],
+            responseUrl: '',
+            pageTitle: '',
+            error: error,
+            needRetry: needRetry,
+        };
     }
 
     return {
@@ -38,6 +45,8 @@ export async function handleSourceSpecificStuff(url, page, cookieOnly, retryCoun
         cookies: await page.cookies(),
         responseUrl: page.url(),
         pageTitle: await page.title(),
+        error: error,
+        needRetry: needRetry,
     };
 }
 
@@ -66,11 +75,14 @@ async function loadPage(url, page, retryCounter) {
         }
 
     } catch (error) {
+        let needRetry = false;
         if (error.message && (
             error.message.match(/timeout .+ exceeded/i) ||
             error.message.includes('net::ERR_TIMED_OUT') ||
             error.message.includes('net::ERR_CONNECTION_TIMED_OUT') ||
-            error.message.includes('net::ERR_DNS_NO_MATCHING_SUPPORTED_ALPN')
+            error.message.includes('net::ERR_DNS_NO_MATCHING_SUPPORTED_ALPN') ||
+            error.message.includes('net::ERR_NAME_NOT_RESOLVED') ||
+            error.message.includes('net::ERR_CONNECTION_CLOSED')
         )) {
             if (retryCounter === 0) {
                 const simpleUrl = url.replace('https://', '').split('/')[0];
@@ -78,10 +90,15 @@ async function loadPage(url, page, retryCounter) {
                 await saveCrawlerWarning(`RemoteBrowser (${config.serverName}): error on (page: ${simpleUrl}), (ErrorMessage: ${errorMessage})`);
             }
         } else {
+            needRetry = true;
             error.url = url;
             saveError(error, true);
         }
-        return false;
+        return {
+            pageLoaded: false,
+            error: error.message,
+            needRetry: needRetry,
+        };
     }
 
     //wait for page load complete
@@ -97,8 +114,13 @@ async function loadPage(url, page, retryCounter) {
                 await page.waitForSelector('.alphapageNavi', {timeout: 10000});
             }
         }
-        return true;
+        return {
+            pageLoaded: true,
+            error: '',
+            needRetry: false,
+        };
     } catch (error) {
+        let needRetry = false;
         if (error.message && error.message.match(/((timeout)|(Waiting failed:)|(Waiting for selector)) .+ exceeded/i)) {
             if (retryCounter === 0) {
                 const simpleUrl = url.replace('https://', '').split('/')[0];
@@ -110,8 +132,13 @@ async function loadPage(url, page, retryCounter) {
             const errorMessage = "Waiting for selector `.main_site/.body_favorites` failed: Waiting failed: 10000ms exceeded";
             await saveCrawlerWarning(`RemoteBrowser (${config.serverName}): error on (page: ${simpleUrl}), (ErrorMessage: ${errorMessage})`);
         } else {
+            needRetry = true;
             saveError(error);
         }
-        return false;
+        return {
+            pageLoaded: false,
+            error: error.message,
+            needRetry: needRetry,
+        };
     }
 }
