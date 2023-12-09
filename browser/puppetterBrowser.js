@@ -43,7 +43,7 @@ export async function executeUrl(url, cookieOnly, fileNames = [], saveToDb = fal
         await pauseCrawler();
         changePageLinkStateFromCrawlerStatus(url, '', 'before cluster execute', retryCounter);
         let res = await cluster.execute({url, cookieOnly, fileNames, saveToDb, execType, retryCounter});
-        if (!res && retryCounter < 1 && execType !== 'downloadYoutube') {
+        if (!res.pageContent && res.needRetry && retryCounter < 1 && execType !== 'downloadYoutube') {
             retryCounter++;
             await new Promise(resolve => setTimeout(resolve, 500));
             return await executeUrl(url, cookieOnly, fileNames, saveToDb, execType, retryCounter);
@@ -78,6 +78,7 @@ export async function startBrowser() {
                     "--disable-gpu",
                 ],
                 ignoreHTTPSErrors: true,
+                timeout: 0,
             },
             retryLimit: 1,
             retryDelay: 1000,
