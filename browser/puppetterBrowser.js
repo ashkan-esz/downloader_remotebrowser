@@ -78,7 +78,6 @@ export async function startBrowser() {
                     "--disable-gpu",
                 ],
                 ignoreHTTPSErrors: true,
-                timeout: 0,
             },
             retryLimit: 1,
             retryDelay: 1000,
