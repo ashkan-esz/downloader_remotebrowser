@@ -179,6 +179,7 @@ async function configRequestInterception(page, execType) {
             url.includes('fingerprint.html') ||
             url.startsWith('data:image/') ||
             url.startsWith('data:text/') ||
+            url.startsWith('data:application/') ||
             url.match(
                 /[.\/](all|spf|network|www-tampering)\.js$/) ||
             url.match(
@@ -200,7 +201,9 @@ async function configRequestInterception(page, execType) {
             url.includes('/litespeed/js/') ||
             url.includes('/wp-content/cache/min/1/') ||
             url.includes('https://sentry') ||
-            url.match(/yektanet|google|zarpop/)
+            url.match(/yektanet|google|zarpop/) ||
+            url.includes('static.cloudflareinsights') ||
+            url.includes('/cdn-cgi/')
         ) {
             interceptedRequest.abort();
         } else {
