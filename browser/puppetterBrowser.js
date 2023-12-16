@@ -1,5 +1,6 @@
 import config from "../config/index.js";
-import {Cluster} from "puppeteer-cluster";
+// import {Cluster} from "puppeteer-cluster";
+import {Cluster} from "puppeteer-cluster-connect";
 import * as originalPuppeteer from 'puppeteer';
 import puppeteer from 'puppeteer-extra';
 //import StealthPlugin from 'puppeteer-extra-plugin-stealth';
@@ -11,6 +12,29 @@ import {FingerprintInjector} from "fingerprint-injector";
 import {uploadFileToBlackHole} from "../sources/blackHole.js";
 import {getYoutubeDownloadLink} from "../sources/youtube.js";
 import {changePageLinkStateFromCrawlerStatus, pauseCrawler} from "../serverStatus.js";
+
+
+const ws = async () => {
+    const browser = await puppeteer.launch({
+        headless: "new",
+        defaultViewport: null,
+        args: [
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--no-zygote",
+            "--disable-dev-shm-usage",
+            "--disable-gpu",
+        ],
+        executablePath: '/usr/bin/google-chrome',
+    });
+    // Store the endpoint to be able to reconnect to Chromium
+    browserPid = browser.process().pid;
+    const browserWSEndpoint = browser.wsEndpoint();
+    // console.log(browserWSEndpoint);
+    // Disconnect puppeteer from Chromium
+    browser.disconnect();
+    return browserWSEndpoint;
+};
 
 //puppeteer.use(StealthPlugin());
 puppeteer.use(
@@ -63,11 +87,13 @@ export async function executeUrl(url, cookieOnly, fileNames = [], saveToDb = fal
 
 export async function startBrowser() {
     try {
-        cluster = await Cluster.launch({
+        cluster = await Cluster.connect({
+            // provide the puppeteer-core library
             puppeteer: puppeteer,
             concurrency: Cluster.CONCURRENCY_PAGE,
             maxConcurrency: config.browserTabsCount,
             puppeteerOptions: {
+                browserWSEndpoint: await ws(),
                 headless: "new",
                 executablePath: '/usr/bin/google-chrome',
                 args: [
@@ -79,6 +105,8 @@ export async function startBrowser() {
                 ],
                 ignoreHTTPSErrors: true,
             },
+            // Put restart function callback here
+            restartFunction: ws,
             retryLimit: 1,
             retryDelay: 1000,
             workerCreationDelay: 1000,
@@ -88,12 +116,12 @@ export async function startBrowser() {
         });
 
         await cluster.task(async ({page, data: {url, cookieOnly, fileNames, saveToDb, execType, retryCounter}}) => {
-            changePageLinkStateFromCrawlerStatus(url, '', 'getting browser Pid', retryCounter);
-            try {
-                browserPid = page.browser().process().pid;
-            } catch (e) {
-                saveError(e);
-            }
+            // changePageLinkStateFromCrawlerStatus(url, '', 'getting browser Pid', retryCounter);
+            // try {
+            //     browserPid = page.browser().process().pid;
+            // } catch (e) {
+            //     saveError(e);
+            // }
             changePageLinkStateFromCrawlerStatus(url, '', 'start cluster task', retryCounter);
             if (url.includes('blackHole.') || fileNames.length > 0) {
                 changePageLinkStateFromCrawlerStatus(url, 'blackHoleUpload', 'start cluster task', retryCounter);
